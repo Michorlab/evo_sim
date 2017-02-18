@@ -1,0 +1,124 @@
+//
+//  CList.hpp
+//  variable fitness branching process
+//
+//  Created by Debra Van Egeren on 2/17/17.
+//  Copyright © 2017 Debra Van Egeren. All rights reserved.
+//
+
+#ifndef clist_h
+#define clist_h
+
+#include <stdio.h>
+#include <iostream>
+#include <fstream>
+#include <vector>
+#include "Clone.h"
+
+using namespace std;
+class CellType;
+class MutationHandler;
+
+class CList {
+    /* represents a population of cells to be simulated. encodes the mechanism for advancing the simulation forward in time (the simulation structure, cell type hierarchy, and cells to be simulated).
+     */
+private:
+    //these both will be NULL iff there are no cells left in the population.
+    Clone *root;
+    Clone *end_node;
+    
+    double d;
+    double tot_rate;
+    double time;
+    int max_types;
+    int num_types;
+    
+    // stores pointers to CellTypes that have been initialized in this simulation run. may include extinct types. no Clones in the simulation should have a CellType not included in this vector.
+    std::vector<CellType *> curr_types;
+    // root types are CellTypes present at the start of the simulation. they will be roots of a phylogeny of types. this is distinct from the root clone of the CList- the root clone is just the start of the linked list containing all of the Clones.
+    std::vector<CellType *> root_types;
+    
+    long long tot_cell_count;
+    MutationHandler *mut_model;
+    
+    Clone& chooseReproducer();
+    Clone& chooseDead();
+    void deleteList();
+    void clearClones();
+    bool checkInit();
+    
+public:
+    CList();
+    CList(double death, MutationHandler& mut_handle, int max);
+    
+    /* adds a new clone to the simulation. clone type must not already be present in the simulation.
+     */
+    void insertNode(Clone& newclone);
+    
+    /* advances the simulation by one event (birth or death). MODIFIES the CList and Clones inside.
+     */
+    void advance();
+    
+    /* get the index of a new cell type that doesn't conflict with the current typespace.
+     SHOULD NEVER be called when their are no free types left (max_types = num_types).
+     @return index of next free type.
+     */
+    int getNextType();
+    
+    CellType* getTypeByIndex(int i){
+        return curr_types[i];
+    }
+    
+    double getCurrTime(){
+        return time;
+    }
+    MutationHandler& getMutHandler(){
+        return *mut_model;
+    }
+    Clone& getEnd(){
+        return *end_node;
+    }
+    void setEnd(Clone *new_end){
+        end_node = new_end;
+    }
+    void setRoot(Clone *new_root){
+        root = new_root;
+    }
+    void addRootType(CellType& new_root){
+        root_types.push_back(&new_root);
+    }
+    std::vector<CellType *>& getRootTypes(){
+        return root_types;
+    }
+    void refreshSim();
+    
+    bool isExtinct(){
+        return tot_cell_count == 0;
+    }
+    
+    bool noTypesLeft(){
+        return num_types == max_types;
+    }
+    
+    /* adds cells to population. should NOT be used when a new clone is added, only when cells are added to an existing clone.
+     use insertNode if a new clone should be added.
+     @param b PER CELL birth rate of new cells to be added
+     @param num_cells number of cells to be added
+     */
+    void addCells(double b, int num_cells);
+    
+    /* removes EXACTLY ONE cell from the population
+     */
+    void removeCell(double b);
+    
+    void walkTypesAndWrite(ofstream& outfile, CellType& root);
+    
+    bool handle_line(vector<string>& parsed_line);
+    
+    bool read_clones(ifstream& infile);
+    
+    long long getNumCells(){return tot_cell_count;}
+    
+};
+
+#endif /* clist_h */

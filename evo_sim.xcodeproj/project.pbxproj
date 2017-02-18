@@ -8,6 +8,8 @@
 
 /* Begin PBXBuildFile section */
 		B193FCF41E581711006DB43D /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B193FCF31E581711006DB43D /* main.cpp */; };
+		B193FD001E581735006DB43D /* CList.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B193FCFA1E581735006DB43D /* CList.cpp */; };
+		B193FD011E581735006DB43D /* Clone.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B193FCFB1E581735006DB43D /* Clone.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -25,6 +27,12 @@
 /* Begin PBXFileReference section */
 		B193FCF01E581711006DB43D /* evo_sim */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = evo_sim; sourceTree = BUILT_PRODUCTS_DIR; };
 		B193FCF31E581711006DB43D /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
+		B193FCFA1E581735006DB43D /* CList.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = CList.cpp; sourceTree = "<group>"; };
+		B193FCFB1E581735006DB43D /* Clone.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Clone.cpp; sourceTree = "<group>"; };
+		B193FCFC1E581735006DB43D /* CList.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CList.h; sourceTree = "<group>"; };
+		B193FCFD1E581735006DB43D /* Clone.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Clone.h; sourceTree = "<group>"; };
+		B193FCFE1E581735006DB43D /* main.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = main.h; sourceTree = "<group>"; };
+		B193FCFF1E581735006DB43D /* readme.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = readme.txt; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -58,6 +66,12 @@
 			isa = PBXGroup;
 			children = (
 				B193FCF31E581711006DB43D /* main.cpp */,
+				B193FCFA1E581735006DB43D /* CList.cpp */,
+				B193FCFB1E581735006DB43D /* Clone.cpp */,
+				B193FCFC1E581735006DB43D /* CList.h */,
+				B193FCFD1E581735006DB43D /* Clone.h */,
+				B193FCFE1E581735006DB43D /* main.h */,
+				B193FCFF1E581735006DB43D /* readme.txt */,
 			);
 			path = evo_sim;
 			sourceTree = "<group>";
@@ -120,6 +134,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				B193FCF41E581711006DB43D /* main.cpp in Sources */,
+				B193FD011E581735006DB43D /* Clone.cpp in Sources */,
+				B193FD001E581735006DB43D /* CList.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
