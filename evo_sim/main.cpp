@@ -70,11 +70,13 @@ int main(int argc, char *argv[]){
 
 //=============CLASS METHODS==================
 
-CellType::CellType(int i, CellType *parent_type, int num){
+CellType::CellType(int i, CellType *parent_type){
     index = i;
     parent = parent_type;
     children = std::vector<CellType *> {};
-    num_cells = num;
+    num_cells = 0;
+    root_node = NULL;
+    end_node = NULL;
     prev_node = NULL;
     next_node = NULL;
 }
@@ -82,11 +84,47 @@ CellType::CellType(int i, CellType *parent_type, int num){
 void CellType::subtractOneCell(double b){
     num_cells --;
     total_birth_rate-=b;
+    if (isExtinct()){
+        unlinkType();
+    }
+    clone_list->removeCell(b);
 }
 
 void CellType::addCells(int num, double b){
     num_cells += num;
     total_birth_rate += b*num;
+    clone_list->addCells(num, b);
+}
+
+CellType::~CellType(){
+    Clone *to_delete = root_node;
+    Clone *next;
+    while (to_delete){
+        next = &to_delete->getNextWithinType();
+        delete to_delete;
+    }
+}
+
+void CellType::unlinkType(){
+    next_node->setPrev(*prev_node);
+    prev_node->setNext(*next_node);
+}
+
+MutationHandler& CellType::getMutHandler(){
+    return clone_list->getMutHandler();
+};
+
+void CellType::insertClone(Clone &new_clone){
+    addCells(new_clone.getCellCount(), new_clone.getBirthRate());
+    if (!root_node){
+        root_node = &new_clone;
+        end_node = &new_clone;
+    }
+    else{
+        end_node->setNext(&new_clone);
+        new_clone.setPrev(end_node);
+        end_node = &new_clone;
+    }
 }
 
 //----------MutationHandlers----------------
@@ -95,33 +133,36 @@ ThreeTypesMutation::ThreeTypesMutation(double m2, double f1, double f2){
     mu2 = m2;
     fit1 = f1;
     fit2 = f2;
-    birth_rate = NULL;
-    mut_prob = NULL;
+    birth_rate = 0;
+    mut_prob = 0;
     new_type = NULL;
 }
 
-CellType* MutationHandler::getNewTypeByIndex(int index, CList& clone_list, CellType& curr_type){
-    if (clone_list.getTypeByIndex(index)){
-        return clone_list.getTypeByIndex(index);
+CellType* MutationHandler::getNewTypeByIndex(int index, CellType& curr_type){
+    CList *clone_list = &curr_type.getPopulation();
+    if (clone_list->getTypeByIndex(index)){
+        return clone_list->getTypeByIndex(index);
     }
     else{
-        return (new CellType(index, &curr_type, 1));
+        CellType *new_type = new CellType(index, &curr_type);
+        clone_list->insertCellType(*new_type);
+        return new_type;
     }
 }
 
-void ThreeTypesMutation::generateMutant(CellType& type, CList& clone_list, double b, double mut){
+void ThreeTypesMutation::generateMutant(CellType& type, double b, double mut){
     if (!(type.getIndex() <= 1)){
         throw "bad three types mutating cell type";
     }
     if (type.getIndex() == 1){
         birth_rate = b + fit2;
         mut_prob = 0;
-        new_type = getNewTypeByIndex(2, clone_list, type);
+        new_type = getNewTypeByIndex(2, type);
     }
     else if (type.getIndex() == 0){
         birth_rate = b + fit1;
         mut_prob = mu2;
-        new_type = getNewTypeByIndex(1, clone_list, type);
+        new_type = getNewTypeByIndex(1, type);
     }
 }
 
@@ -211,11 +252,15 @@ bool SimParams::handle_line(string& line){
     }
     else if (parsed_line[0] == "pop_params"){
         parsed_line.erase(parsed_line.begin());
-        clone_list->handle_line(parsed_line);
+        if (!clone_list->handle_line(parsed_line)){
+            err_type = "bad pop_params line";
+            return false;
+        }
     }
     else if (parsed_line[0] == "clone"){
         parsed_line.erase(parsed_line.begin());
         if (!make_clone(clone_type, parsed_line)){
+            err_type = "bad clone line";
             return false;
         }
     }
@@ -237,37 +282,48 @@ bool SimParams::make_clone(string& type, vector<string> &parsed_line){
         err_type = "type space conflict";
         return false;
     }
-    CellType *new_type = new CellType(type_id, NULL, num_cells);
+    CellType *new_type = new CellType(type_id, NULL);
     clone_list->addRootType(*new_type);
+    clone_list->insertCellType(*new_type);
+    parsed_line.erase(parsed_line.begin());
     
     if (type == "Simple"){
-        if (parsed_line.size() != 4){
+        if (parsed_line.size() != 3){
             err_type = "bad params for SimpleClone";
             return false;
         }
-        Clone *new_clone = new SimpleClone(*new_type, stod(parsed_line[2]), stod(parsed_line[3]), num_cells, *clone_list);
-        clone_list->insertNode(*new_clone);
+        Clone *new_clone = new SimpleClone(*new_type);
+        if (!new_clone->readLine(parsed_line)){
+            return false;
+        }
+        new_type->insertClone(*new_clone);
     }
     else if (type == "TypeSpecific"){
-        if (parsed_line.size() != 5){
+        if (parsed_line.size() != 4){
             err_type = "bad params for TypeSpecificClone";
             return false;
         }
-        Clone *new_clone;
+        TypeSpecificClone *new_clone;
         for (int i=0; i<num_cells; i++){
-            new_clone = new TypeSpecificClone(*new_type, stod(parsed_line[2]), stod(parsed_line[3]), stod(parsed_line[4]), *clone_list);
-            clone_list->insertNode(*new_clone);
+            new_clone = new TypeSpecificClone(*new_type);
+            if (!new_clone->readLine(parsed_line)){
+                return false;
+            }
+            new_type->insertClone(*new_clone);
         }
     }
     else if (type == "Heritable"){
-        if (parsed_line.size() != 5){
+        if (parsed_line.size() != 4){
             err_type = "bad params for HeritableClone";
             return false;
         }
         Clone *new_clone;
         for (int i=0; i<num_cells; i++){
-            new_clone = new HeritableClone(*new_type, stod(parsed_line[2]), stod(parsed_line[3]), stod(parsed_line[4]), *clone_list);
-            clone_list->insertNode(*new_clone);
+            new_clone = new HeritableClone(*new_type);
+            if (!new_clone->readLine(parsed_line)){
+                return false;
+            }
+            new_type->insertClone(*new_clone);
         }
     }
     else{

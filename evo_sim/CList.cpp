@@ -30,6 +30,8 @@ CList::CList(double death, MutationHandler& mut_handle, int max){
     clearClones();
     tot_cell_count = 0;
     mut_model = &mut_handle;
+    root = NULL;
+    end_node = NULL;
 }
 
 CList::CList(){
@@ -37,6 +39,10 @@ CList::CList(){
     time = 0;
     num_types = 0;
     tot_cell_count = 0;
+    root = NULL;
+    end_node = NULL;
+    mut_model = NULL;
+    d = 0;
 }
 
 void CList::clearClones(){
@@ -55,24 +61,19 @@ void CList::refreshSim(){
     num_types = 0;
 }
 
-void CList::insertNode(Clone& newclone) {
-    CellType& new_type = newclone.getType();
-    if (!curr_types[new_type.getIndex()]){
-        curr_types[new_type.getIndex()] = &newclone.getType();
-        curr_types[new_type.getParent().getIndex()]->addChild(new_type);
-        num_types++;
+void CList::insertCellType(CellType& new_type) {
+    if (curr_types[new_type.getIndex()]){
+        throw "type space conflict";
     }
-    else if(curr_types[new_type.getIndex()] != &newclone.getType()){
-        throw "typespace error";
-    }
-    end_node->setNext(&newclone);
-    end_node = &newclone;
-    addCells(newclone.getBirthRate(), newclone.getCellCount());
+    end_node->setNext(new_type);
+    new_type.setPrev(*end_node);
+    end_node = &new_type;
+    addCells(new_type.getNumCells(), new_type.getBirthRate());
 }
 
 void CList::deleteList()
 {
-    Clone *pnode = root;
+    CellType *pnode = root;
     while(root!=NULL) {
         pnode = root;
         root = &root->getNext();
@@ -106,10 +107,10 @@ Clone& CList::chooseReproducer(){
     uniform_real_distribution<double> runif;
     
     double ran = runif(eng2) * tot_rate;
-    Clone *reproducer = root;
-    double curr_rate = root->getTotalBirth();
-    while (curr_rate < ran){
-        reproducer = &reproducer->getNext();
+    Clone *reproducer = &root->getRoot();
+    double curr_rate = reproducer->getTotalBirth();
+    while (curr_rate < ran && reproducer){
+        reproducer = &reproducer->getNextClone();
         curr_rate += reproducer->getTotalBirth();
     }
     return *reproducer;
@@ -119,10 +120,10 @@ Clone& CList::chooseDead(){
     uniform_real_distribution<double> runif;
     
     double ran = runif(eng2) * tot_cell_count;
-    Clone *dead = root;
-    double curr_rate = root->getCellCount();
-    while (curr_rate < ran){
-        dead = &dead->getNext();
+    Clone *dead = &root->getRoot();
+    double curr_rate = dead->getCellCount();
+    while (curr_rate < ran && dead){
+        dead = &dead->getNextClone();
         curr_rate += dead->getCellCount();
     }
     return *dead;
@@ -138,7 +139,7 @@ int CList::getNextType(){
     throw "tried to get a new type at max_types";
 }
 
-void CList::addCells(double b, int num_cells){
+void CList::addCells(int num_cells, double b){
     tot_rate += b * num_cells;
     tot_cell_count += num_cells;
 }

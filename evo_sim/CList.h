@@ -20,12 +20,13 @@ class CellType;
 class MutationHandler;
 
 class CList {
+    friend class CellType;
     /* represents a population of cells to be simulated. encodes the mechanism for advancing the simulation forward in time (the simulation structure, cell type hierarchy, and cells to be simulated).
      */
 private:
-    //these both will be NULL iff there are no cells left in the population.
-    Clone *root;
-    Clone *end_node;
+    //these both will be NULL iff there are no cell types in the population.
+    CellType *root;
+    CellType *end_node;
     
     double d;
     double tot_rate;
@@ -47,13 +48,31 @@ private:
     void clearClones();
     bool checkInit();
     
+    /* adds cells to population. should NOT be used when a new clone is added, only when cells are added to an existing clone.
+     use insertNode if a new clone should be added.
+     @param b PER CELL birth rate of new cells to be added
+     @param num_cells number of cells to be added
+     */
+    void addCells(int num_cells, double b);
+    
+    /* removes EXACTLY ONE cell from the population
+     */
+    void removeCell(double b);
+    
+    void setEnd(CellType& new_end){
+        end_node = &new_end;
+    }
+    void setRoot(CellType& new_root){
+        root = &new_root;
+    }
+    
 public:
     CList();
     CList(double death, MutationHandler& mut_handle, int max);
     
-    /* adds a new clone to the simulation. clone type must not already be present in the simulation.
+    /* adds a new type to the simulation. type must not already be present in the simulation.
      */
-    void insertNode(Clone& newclone);
+    void insertCellType(CellType& new_type);
     
     /* advances the simulation by one event (birth or death). MODIFIES the CList and Clones inside.
      */
@@ -75,15 +94,7 @@ public:
     MutationHandler& getMutHandler(){
         return *mut_model;
     }
-    Clone& getEnd(){
-        return *end_node;
-    }
-    void setEnd(Clone *new_end){
-        end_node = new_end;
-    }
-    void setRoot(Clone *new_root){
-        root = new_root;
-    }
+    
     void addRootType(CellType& new_root){
         root_types.push_back(&new_root);
     }
@@ -99,17 +110,6 @@ public:
     bool noTypesLeft(){
         return num_types == max_types;
     }
-    
-    /* adds cells to population. should NOT be used when a new clone is added, only when cells are added to an existing clone.
-     use insertNode if a new clone should be added.
-     @param b PER CELL birth rate of new cells to be added
-     @param num_cells number of cells to be added
-     */
-    void addCells(double b, int num_cells);
-    
-    /* removes EXACTLY ONE cell from the population
-     */
-    void removeCell(double b);
     
     void walkTypesAndWrite(ofstream& outfile, CellType& root);
     

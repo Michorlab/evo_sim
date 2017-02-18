@@ -14,26 +14,51 @@ using namespace std;
 
 class CList;
 class Clone;
+class MutationHandler;
 
 class CellType{
     /* represents a functional subset of cells in the population (e.g. cells with a specific mutation, phenotype, etc)
      distinct from fitness- cells with different birth rates can have the same type
      tracks the type history/phylogeny and number of cells by type
      */
+    friend class CList;
+    friend class Clone;
 private:
     CellType *parent;
     std::vector<CellType *> children;
     CellType *prev_node;
     CellType *next_node;
+    Clone *root_node;
+    Clone *end_node;
     int index;
     int num_cells;
     double total_birth_rate;
+    void unlinkType();
+    void setNext(CellType& next){
+        next_node = &next;
+    }
+    void setPrev(CellType& prev){
+        prev_node = &prev;
+    }
+    CList *clone_list;
+    void setRoot(Clone& new_root){
+        root_node = &new_root;
+    }
+    void setEnd(Clone& new_end){
+        end_node = &new_end;
+    }
+    // called every time a cell of this type is born
+    void addCells(int num, double b);
+    // called every time a cell of this type dies
+    void subtractOneCell(double b);
 public:
     /* @param i cell type id. should be unique in the clone list typespace.
      @param parent_type cell type that formed this type, via mutation. if one of the original types in simulation, then NULL.
      @param num initial number of cells of this type.
      */
-    CellType(int i, CellType *parent_type, int num);
+    CellType(int i, CellType *parent_type);
+    
+    ~CellType();
     
     /* called when a new type is formed after mutation from this parent type
      @param child_type child to be added
@@ -53,10 +78,6 @@ public:
     int getIndex(){
         return index;
     }
-    // called every time a cell of this type is born
-    void addCells(int num, double b);
-    // called every time a cell of this type dies
-    void subtractOneCell(double b);
     
     int getNumCells(){
         return num_cells;
@@ -64,6 +85,21 @@ public:
     double getBirthRate(){
         return total_birth_rate;
     }
+
+    CellType& getNext(){
+        return *next_node;
+    }
+    Clone& getRoot(){
+        return *root_node;
+    }
+    Clone& getEnd(){
+        return *end_node;
+    }
+    MutationHandler& getMutHandler();
+    CList& getPopulation(){
+        return *clone_list;
+    }
+    void insertClone(Clone& new_clone);
 };
 
 class MutationHandler {
@@ -82,7 +118,7 @@ protected:
      @param curr_type the parent of the new cell
      @return a cell type appropriate for the typespace in clone_list with the desired index. MUST BE DELETED LATER.
      */
-    CellType* getNewTypeByIndex(int index, CList& clone_list, CellType& curr_type);
+    CellType* getNewTypeByIndex(int index, CellType& curr_type);
 public:
     //@return birth rate of new type, after generateMutant
     double getNewBirthRate() {return birth_rate;}
@@ -100,7 +136,7 @@ public:
      @param b current birth rate of mother
      @param mut current mutation rate of mother
      */
-    virtual void generateMutant(CellType& type, CList& clone_list, double b, double mut) = 0;
+    virtual void generateMutant(CellType& type, double b, double mut) = 0;
     virtual bool read(std::vector<string>& params) = 0;
 };
 
@@ -117,7 +153,7 @@ private:
 public:
     ThreeTypesMutation(){};
     ThreeTypesMutation(double m2, double f1, double f2);
-    void generateMutant(CellType& type, CList& clone_list, double b, double mut);
+    void generateMutant(CellType& type, double b, double mut);
     bool read(std::vector<string>& params);
 };
 

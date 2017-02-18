@@ -10,6 +10,8 @@
 #define clone_h
 
 #include <stdio.h>
+#include <vector>
+#include <string>
 
 using namespace std;
 
@@ -18,6 +20,9 @@ class CellType;
 class MutationHandler;
 
 class Clone{
+private:
+    Clone *next_node;
+    Clone *prev_node;
 protected:
     long long cell_count;
     CellType *cell_type;
@@ -25,25 +30,23 @@ protected:
     double birth_rate;
     double mut_prob;
     
-    CList *clone_list;
-    Clone *next_node;
-    Clone *prev_node;
-    
+    void addCells(int num_cells);
+    bool checkRep(){
+        return (mut_prob < 0 || birth_rate < 0 || cell_count <= 0);
+    }
 public:
-    /* adjusts the linked list so the clone is no longer in the list. adjusts root and end of clone_list as appropriate.
-     MODIFIES clone_list.
+    /* adjusts the linked list so the clone is no longer in the list. adjusts root and end of cell_type as appropriate.
+     MODIFIES cell_type
      */
     ~Clone();
     
-    Clone(CellType& type, double mut, CList& pop);
+    Clone(CellType& type);
+    
+    Clone(CellType& type, double mut);
     
     virtual void reproduce() = 0;
     
-    /* removes one cell from this clone's population
-     should not be called if there is <=1 cell left in the clone
-     MODIFIES clone_list
-     */
-    void removeOneCell();
+    virtual bool readLine(vector<string>& parsed_line) = 0;
     
     double getBirthRate(){
         return birth_rate;
@@ -63,16 +66,23 @@ public:
     void setPrev(Clone *parent){
         prev_node = parent;
     }
-    Clone& getNext(){
+    Clone& getNextWithinType(){
         return *next_node;
     }
-    Clone& getPrev(){
+    Clone& getPrevWithinType(){
         return *prev_node;
     }
     CellType& getType(){
         return *cell_type;
     }
-    void addCells(int num_cells);
+    
+    Clone& getNextClone();
+    
+    /* removes one cell from this clone's population
+     should not be called if there is <=1 cell left in the clone
+     MODIFIES clone_list, cell_type
+     */
+    void removeOneCell();
 };
 
 class StochClone: public Clone{
@@ -80,13 +90,17 @@ protected:
     double drawLogNorm(double mean, double var);
 public:
     virtual void reproduce() = 0;
-    StochClone(CellType& type, double mut, CList& pop);
+    virtual bool readLine(vector<string>& parsed_line) = 0;
+    StochClone(CellType& type);
+    StochClone(CellType& type, double mut);
 };
 
 class SimpleClone: public Clone{
 public:
-    SimpleClone(CellType& type, double b, double mut, int num_cells, CList& pop);
+    SimpleClone(CellType& type, double b, double mut, int num_cells);
+    SimpleClone(CellType& type);
     void reproduce();
+    bool readLine(vector<string>& parsed_line);
 };
 
 class TypeSpecificClone: public StochClone{
@@ -94,8 +108,10 @@ private:
     double mean;
     double var;
 public:
-    TypeSpecificClone(CellType& type, double mu, double sig, double mut, CList& pop);
+    TypeSpecificClone(CellType& type, double mu, double sig, double mut);
+    TypeSpecificClone(CellType& type);
     void reproduce();
+    bool readLine(vector<string>& parsed_line);
 };
 
 class HeritableClone: public StochClone{
@@ -103,8 +119,10 @@ private:
     double mean;
     double var;
 public:
-    HeritableClone(CellType& type, double mu, double sig, double mut, CList& pop);
+    HeritableClone(CellType& type, double mu, double sig, double mut);
+    HeritableClone(CellType& type);
     void reproduce();
+    bool readLine(vector<string>& parsed_line);
 };
 
 #endif /* clone_h */
