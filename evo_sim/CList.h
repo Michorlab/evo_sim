@@ -14,9 +14,9 @@
 #include <fstream>
 #include <vector>
 #include "Clone.h"
+#include "main.h"
 
 using namespace std;
-class CellType;
 class MutationHandler;
 
 class CList {
@@ -105,6 +105,10 @@ public:
     
     bool isExtinct(){
         return tot_cell_count == 0;
+    }
+    
+    int newestType(){
+        return end_node->getIndex();
     }
     
     bool noTypesLeft(){

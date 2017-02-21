@@ -175,12 +175,11 @@ private:
      */
     bool handle_sim_line(vector<string>& parsed_line);
     bool make_mut_handler();
-    bool make_clone(string& type, vector<string>& parsed_line);
+    bool make_clone(vector<string>& parsed_line);
     int err_line;
     string err_type;
     string mut_type;
     string sim_name;
-    string clone_type;
     std::vector<string> *mut_params;
 
 public:
@@ -199,52 +198,7 @@ public:
     int getMaxCells(){return max_cells;}
     string getName(){return sim_name;}
     MutationHandler& get_mut_handler(){return *mut_handler;}
-};
-
-
-
-
-class OutputWriter{
-    /* writes results to files. can write/act after every timestep (call to CList::advance()) or only after each simulation instance.
-     */
-protected:
-    ofstream outfile;
-public:
-    ~OutputWriter();
-    virtual void finalAction(CList& clone_list) = 0;
-    virtual void duringAction(CList& clone_list) = 0;
-};
-
-class FinalOutputWriter: public OutputWriter{
-public:
-    FinalOutputWriter(string ofile);
-    virtual void finalAction(CList& clone_list) = 0;
-    void duringSimAction(CList& clone_list){};
-};
-
-class DuringOutputWriter: public OutputWriter{
-protected:
-    int writing_period;
-    int last_written;
-    bool shouldWrite(CList& clone_list);
-public:
-    DuringOutputWriter(string ofile, int period);
-    virtual void finalAction(CList& clone_list) = 0;
-    virtual void duringAction(CList& clone_list) = 0;
-};
-
-class TypeStructureWriter: public FinalOutputWriter{
-public:
-    void finalAction(CList& clone_list);
-};
-
-class CellCountWriter: public DuringOutputWriter{
-private:
-    int index;
-public:
-    CellCountWriter(string ofile, int period, int i);
-    void finalAction(CList& clone_list){};
-    void duringSimAction(CList& clone_list);
+    void refreshSim(ifstream& infile);
 };
 
 #endif /* main_h */

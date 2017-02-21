@@ -38,7 +38,7 @@ public:
     /* adjusts the linked list so the clone is no longer in the list. adjusts root and end of cell_type as appropriate.
      MODIFIES cell_type
      */
-    ~Clone();
+    virtual ~Clone();
     
     Clone(CellType& type);
     

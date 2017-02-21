@@ -15,6 +15,7 @@
 #include "main.h"
 #include "Clone.h"
 #include "CList.h"
+#include "OutputWriter.h"
 
 using namespace std;
 
@@ -44,7 +45,7 @@ int main(int argc, char *argv[]){
     }
     
     ofstream errfile;
-    errfile.open(outfolder+"input_err.branch");
+    errfile.open(outfolder+"input_err.eevo");
     vector<OutputWriter*> writers;
     
     ifstream infile;
@@ -57,14 +58,26 @@ int main(int argc, char *argv[]){
         errfile.close();
         return 1;
     }
-    infile.close();
+    
     errfile.close();
     
     for (int i=0; i<params.getNumSims(); i++){
+        for (vector<OutputWriter *>::iterator it = writers.begin(); it != writers.end(); ++it){
+            (*it)->beginAction(clone_list);
+        }
         while (clone_list.getCurrTime() < params.getMaxTime() && clone_list.getNumCells() < params.getMaxCells() && !clone_list.noTypesLeft()){
             clone_list.advance();
+            for (vector<OutputWriter *>::iterator it = writers.begin(); it != writers.end(); ++it){
+                (*it)->duringSimAction(clone_list);
+            }
         }
+        for (vector<OutputWriter *>::iterator it = writers.begin(); it != writers.end(); ++it){
+            (*it)->finalAction(clone_list);
+        }
+        params.refreshSim(infile);
     }
+    writers.clear();
+    infile.close();
     return 0;
 }
 
@@ -216,6 +229,27 @@ SimParams::SimParams(CList& clist){
     clone_list = &clist;
 }
 
+void SimParams::refreshSim(ifstream& infile){
+    clone_list->refreshSim();
+    string line;
+    std::stringstream ss;
+    
+    string tok;
+    std::vector<string> parsed_line;
+    
+    while (getline(infile, line)){
+        ss.str(line);
+        while (getline(ss, tok, '\t')){
+            parsed_line.push_back(tok);
+        }
+        if (parsed_line[0] == "clone"){
+            parsed_line.erase(parsed_line.begin());
+            make_clone(parsed_line);
+        }
+    }
+
+}
+
 bool SimParams::read(ifstream& infile){
     string line;
     
@@ -259,7 +293,7 @@ bool SimParams::handle_line(string& line){
     }
     else if (parsed_line[0] == "clone"){
         parsed_line.erase(parsed_line.begin());
-        if (!make_clone(clone_type, parsed_line)){
+        if (!make_clone(parsed_line)){
             err_type = "bad clone line";
             return false;
         }
@@ -271,11 +305,13 @@ bool SimParams::handle_line(string& line){
     return true;
 }
 
-bool SimParams::make_clone(string& type, vector<string> &parsed_line){
-    if (parsed_line.size() < 4){
+bool SimParams::make_clone(vector<string> &parsed_line){
+    if (parsed_line.size() < 5){
         err_type = "bad params for Clone";
         return false;
     }
+    string type = parsed_line[0];
+    parsed_line.erase(parsed_line.begin());
     int type_id = stoi(parsed_line[0]);
     int num_cells = stoi(parsed_line[1]);
     if (clone_list->getTypeByIndex(type_id)){
@@ -357,9 +393,6 @@ bool SimParams::handle_sim_line(vector<string>& parsed_line){
     else if (parsed_line[0] == "sim_id"){
         sim_name = parsed_line[1];
     }
-    else if (parsed_line[0] == "clone_type"){
-        clone_type =  parsed_line[1];
-    }
     return true;
 }
 
@@ -380,52 +413,6 @@ void SimParams::writeErrors(ofstream& errfile){
     errfile << "SIM INPUT ERRORS" << endl;
     errfile << "error type: " << err_type << endl;
     errfile << "error line: " << err_line << endl;
-}
-
-//-------------OutputWriters---------------
-OutputWriter::~OutputWriter(){
-    outfile.flush();
-    outfile.close();
-}
-
-FinalOutputWriter::FinalOutputWriter(string ofile){
-    outfile.open(ofile);
-}
-
-DuringOutputWriter::DuringOutputWriter(string ofile, int period){
-    outfile.open(ofile);
-    last_written = 0;
-    writing_period = period;
-}
-
-bool DuringOutputWriter::shouldWrite(CList& clone_list){
-    if (writing_period == 0){
-        return true;
-    }
-    int floored_time = floor(clone_list.getCurrTime());
-    if ((floored_time % writing_period == 0) && (floored_time != last_written)){
-        last_written = floored_time;
-        return true;
-    }
-    return false;
-}
-
-void TypeStructureWriter::finalAction(CList& clone_list){
-    std::vector<CellType *> roots = clone_list.getRootTypes();
-    for (int i=0; i<roots.size(); i++){
-        clone_list.walkTypesAndWrite(outfile, *roots[i]);
-    }
-}
-
-CellCountWriter::CellCountWriter(string ofile, int period, int i):DuringOutputWriter(ofile, period){
-    index = i;
-    outfile << "data for cell type " << index << endl;
-}
-
-void CellCountWriter::duringSimAction(CList& clone_list){
-    if (shouldWrite(clone_list)){
-        outfile << clone_list.getCurrTime() << "," << clone_list.getTypeByIndex(index)->getNumCells() << "\t";
-    }
 }
 
 /*
