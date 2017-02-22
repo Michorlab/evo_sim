@@ -31,6 +31,8 @@ public:
 };
 
 class FinalOutputWriter: public OutputWriter{
+protected:
+    int sim_number;
 public:
     FinalOutputWriter(string ofile);
     virtual void finalAction(CList& clone_list) = 0;
@@ -45,6 +47,7 @@ protected:
     bool shouldWrite(CList& clone_list);
 public:
     DuringOutputWriter(string ofile, int period);
+    DuringOutputWriter(string ofile);
     virtual void finalAction(CList& clone_list) = 0;
     virtual void duringSimAction(CList& clone_list) = 0;
     virtual void beginAction(CList& clone_list) = 0;
@@ -57,7 +60,7 @@ public:
     TypeStructureWriter(string ofile);
     ~TypeStructureWriter();
     void finalAction(CList& clone_list);
-    void beginAction(CList& clone_list){};
+    void beginAction(CList& clone_list);
 };
 
 class CellCountWriter: public DuringOutputWriter{
@@ -68,9 +71,30 @@ private:
 public:
     ~CellCountWriter();
     CellCountWriter(string ofile, int period, int i, int sim);
+    CellCountWriter(string ofile);
     void finalAction(CList& clone_list);
     void duringSimAction(CList& clone_list);
     void beginAction(CList& clone_list);
+    bool readLine(vector<string>& parsed_line);
+    int getTypeIndex(){
+        return index;
+    }
+};
+
+class FitnessDistWriter: public DuringOutputWriter{
+private:
+    int index;
+    int sim_number;
+    ofstream outfile;
+    void write_dist(ofstream& outfile, CList& clone_list);
+public:
+    ~FitnessDistWriter();
+    FitnessDistWriter(string ofile, int period, int i, int sim);
+    FitnessDistWriter(string ofile);
+    void finalAction(CList& clone_list);
+    void duringSimAction(CList& clone_list);
+    void beginAction(CList& clone_list);
+    bool readLine(vector<string>& parsed_line);
     int getTypeIndex(){
         return index;
     }
@@ -83,9 +107,11 @@ private:
 public:
     ~AllTypesWriter();
     AllTypesWriter(string ofile, int period);
+    AllTypesWriter(string ofile);
     void finalAction(CList& clone_list);
     void duringSimAction(CList& clone_list);
     void beginAction(CList& clone_list);
+    bool readLine(vector<string>& parsed_line);
 };
 
 class IfType2Writer: public FinalOutputWriter{

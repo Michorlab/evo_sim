@@ -8,6 +8,7 @@
 
 #include "OutputWriter.h"
 #include "main.h"
+#include "Clone.h"
 #include "CList.h"
 #include <vector>
 #include <string>
@@ -18,12 +19,19 @@ using namespace std;
 
 FinalOutputWriter::FinalOutputWriter(string ofile){
     ofile_loc = ofile;
+    sim_number = 1;
 }
 
 DuringOutputWriter::DuringOutputWriter(string ofile, int period){
     ofile_loc = ofile;
     last_written = 0;
     writing_period = period;
+}
+
+DuringOutputWriter::DuringOutputWriter(string ofile){
+    ofile_loc = ofile;
+    last_written = 0;
+    writing_period = 0;
 }
 
 bool DuringOutputWriter::shouldWrite(CList& clone_list){
@@ -40,7 +48,11 @@ bool DuringOutputWriter::shouldWrite(CList& clone_list){
 
 TypeStructureWriter::TypeStructureWriter(string ofile):FinalOutputWriter(ofile){
     ofile_name = "type_tree.oevo";
-    outfile.open(ofile_loc+ofile_name);
+}
+
+void TypeStructureWriter::beginAction(CList &clone_list){
+    string ofile_middle = "sim_"+to_string(sim_number);
+    outfile.open(ofile_loc + ofile_middle + ofile_name);
 }
 
 TypeStructureWriter::~TypeStructureWriter(){
@@ -53,6 +65,9 @@ void TypeStructureWriter::finalAction(CList& clone_list){
     for (int i=0; i<roots.size(); i++){
         clone_list.walkTypesAndWrite(outfile, *roots[i]);
     }
+    outfile.flush();
+    outfile.close();
+    sim_number++;
 }
 
 CellCountWriter::CellCountWriter(string ofile, int period, int i, int sim):DuringOutputWriter(ofile, period){
@@ -61,8 +76,27 @@ CellCountWriter::CellCountWriter(string ofile, int period, int i, int sim):Durin
     sim_number = sim;
 }
 
+CellCountWriter::CellCountWriter(string ofile): DuringOutputWriter(ofile){
+    sim_number = 1;
+}
+
+bool CellCountWriter::readLine(vector<string>& parsed_line){
+    if (parsed_line.size() != 2){
+        return false;
+    }
+    try{
+        writing_period = stoi(parsed_line[0]);
+        index = stoi(parsed_line[1]);
+    }
+    catch (const invalid_argument){
+        return false;
+    }
+    ofile_name = "type_" + to_string(index) + ".oevo";
+    return true;
+}
+
 void CellCountWriter::beginAction(CList& clone_list){
-    string ofile_middle = "sim_"+to_string(sim_number);
+    string ofile_middle = "count_sim_"+to_string(sim_number);
     outfile.open(ofile_loc + ofile_middle + ofile_name);
     outfile << "data for cell type " << index << " sim number " << sim_number << endl;
     outfile << clone_list.getCurrTime() << ", " << clone_list.getTypeByIndex(index)->getNumCells() << endl;
@@ -88,6 +122,12 @@ void CellCountWriter::finalAction(CList& clone_list){
 
 AllTypesWriter::AllTypesWriter(string ofile, int period): DuringOutputWriter(ofile, period){
     sim_number = 1;
+    ofile_name = "all_types";
+}
+
+AllTypesWriter::AllTypesWriter(string ofile): DuringOutputWriter(ofile){
+    sim_number = 1;
+    ofile_name = "all_types";
 }
 
 void AllTypesWriter::beginAction(CList& clone_list){
@@ -122,13 +162,27 @@ void AllTypesWriter::finalAction(CList& clone_list){
     sim_number++;
 }
 
+bool AllTypesWriter::readLine(vector<string>& parsed_line){
+    if (parsed_line.size() != 1){
+        return false;
+    }
+    try{
+        writing_period = stoi(parsed_line[0]);
+    }
+    catch (const invalid_argument){
+        return false;
+    }
+    return true;
+}
+
 IsExtinctWriter::IsExtinctWriter(string ofile): FinalOutputWriter(ofile){
     ofile_name = "extinction.oevo";
     outfile.open(ofile_loc+ofile_name);
 }
 
 void IsExtinctWriter::finalAction(CList& clone_list){
-    outfile << clone_list.isExtinct() << endl;
+    outfile << sim_number << ", " << clone_list.isExtinct() << endl;
+    sim_number++;
 }
 
 IsExtinctWriter::~IsExtinctWriter(){
@@ -142,7 +196,8 @@ EndTimeWriter::EndTimeWriter(string ofile): FinalOutputWriter(ofile){
 }
 
 void EndTimeWriter::finalAction(CList& clone_list){
-    outfile << clone_list.getCurrTime() << endl;
+    outfile << sim_number << ", " << clone_list.getCurrTime() << endl;
+    sim_number++;
 }
 
 EndTimeWriter::~EndTimeWriter(){
@@ -151,15 +206,84 @@ EndTimeWriter::~EndTimeWriter(){
 }
 
 IfType2Writer::IfType2Writer(string ofile): FinalOutputWriter(ofile){
-    ofile_name = "type2.oevo";
+    ofile_name = "iftype2.oevo";
     outfile.open(ofile_loc+ofile_name);
 }
 
 void IfType2Writer::finalAction(CList& clone_list){
-    outfile << (clone_list.getTypeByIndex(2)->getNumCells() > 0) << endl;
+    outfile << sim_number << ", " << (clone_list.getTypeByIndex(2)->getNumCells() > 0) << endl;
+    sim_number++;
 }
 
 IfType2Writer::~IfType2Writer(){
     outfile.flush();
     outfile.close();
+}
+
+FitnessDistWriter::FitnessDistWriter(string ofile, int period, int i, int sim):DuringOutputWriter(ofile, period){
+    ofile_name = "type_" + to_string(i) + ".oevo";
+    index = i;
+    sim_number = sim;
+}
+
+FitnessDistWriter::FitnessDistWriter(string ofile): DuringOutputWriter(ofile){
+    sim_number = 1;
+}
+
+bool FitnessDistWriter::readLine(vector<string>& parsed_line){
+    if (parsed_line.size() != 2){
+        return false;
+    }
+    try{
+        writing_period = stoi(parsed_line[0]);
+        index = stoi(parsed_line[1]);
+    }
+    catch (const invalid_argument){
+        return false;
+    }
+    ofile_name = "type_" + to_string(index) + ".oevo";
+    return true;
+}
+
+void FitnessDistWriter::beginAction(CList& clone_list){
+    string ofile_middle = "fit_sim_"+to_string(sim_number);
+    outfile.open(ofile_loc + ofile_middle + ofile_name);
+    outfile << "data for cell type " << index << " sim number " << sim_number << endl;
+    outfile << clone_list.getCurrTime();
+    write_dist(outfile, clone_list);
+    outfile << endl;
+    
+}
+
+FitnessDistWriter::~FitnessDistWriter(){
+    outfile.flush();
+    outfile.close();
+}
+
+void FitnessDistWriter::write_dist(ofstream& outfile, CList& clone_list){
+    Clone *curr_clone = &(clone_list.getTypeByIndex(index)->getRoot());
+    while (curr_clone){
+        int num_cells = curr_clone->getCellCount();
+        for (int i=0; i<num_cells; i++){
+            outfile << ", " << curr_clone->getBirthRate();
+        }
+        curr_clone = &(curr_clone->getNextWithinType());
+    }
+}
+
+void FitnessDistWriter::duringSimAction(CList& clone_list){
+    if (shouldWrite(clone_list) && clone_list.getTypeByIndex(index)->getNumCells() > 0){
+        outfile << clone_list.getCurrTime();
+        write_dist(outfile, clone_list);
+        outfile << endl;
+    }
+}
+
+void FitnessDistWriter::finalAction(CList& clone_list){
+    outfile << clone_list.getCurrTime();
+    write_dist(outfile, clone_list);
+    outfile << endl;
+    outfile.flush();
+    outfile.close();
+    sim_number++;
 }

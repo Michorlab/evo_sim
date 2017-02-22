@@ -15,6 +15,7 @@ using namespace std;
 class CList;
 class Clone;
 class MutationHandler;
+class OutputWriter;
 
 class CellType{
     /* represents a functional subset of cells in the population (e.g. cells with a specific mutation, phenotype, etc)
@@ -168,6 +169,7 @@ private:
     MutationHandler *mut_handler;
     CList *clone_list;
     bool handle_line(string& line);
+    string *outfolder;
     
     /* handle a line that started with "sim_param".
      @param parsed_line tokenized line with parameter info. already stripped of "sim_param" keyword. first element should be parameter name to be set.
@@ -176,15 +178,17 @@ private:
     bool handle_sim_line(vector<string>& parsed_line);
     bool make_mut_handler();
     bool make_clone(vector<string>& parsed_line);
+    bool make_writer(vector<string>& parsed_line);
     int err_line;
     string err_type;
     string mut_type;
     string sim_name;
+    vector<OutputWriter*> *writers;
     std::vector<string> *mut_params;
 
 public:
-    // initial clone list should be empty, read method will fill it.
-    SimParams(CList& clist);
+    // initial clone list and writer list should be empty, read method will fill it.
+    SimParams(CList& clist, vector<OutputWriter*>& writer_list, string& output);
     
     /* reads an input file and loads parameters
      MUTATES clone_list, makes new Clones

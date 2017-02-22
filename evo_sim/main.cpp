@@ -51,7 +51,7 @@ int main(int argc, char *argv[]){
     ifstream infile;
     infile.open(infilename);
     CList clone_list = CList();
-    SimParams params(clone_list);
+    SimParams params(clone_list, writers, outfolder);
     if (!params.read(infile)){
         params.writeErrors(errfile);
         infile.close();
@@ -216,7 +216,7 @@ bool ThreeTypesMutation::read(std::vector<string>& params){
 
 //--------------SimParams-----------
 
-SimParams::SimParams(CList& clist){
+SimParams::SimParams(CList& clist, vector<OutputWriter*>& writer_list, string& output){
     num_simulations = 0;
     max_time = 0;
     max_cells = 0;
@@ -227,6 +227,8 @@ SimParams::SimParams(CList& clist){
     mut_params = NULL;
     sim_name = "";
     clone_list = &clist;
+    writers = &writer_list;
+    outfolder = &output;
 }
 
 void SimParams::refreshSim(ifstream& infile){
@@ -280,7 +282,10 @@ bool SimParams::handle_line(string& line){
     while (getline(ss, tok, '\t')){
         parsed_line.push_back(tok);
     }
-    if (parsed_line[0] == "sim_params"){
+    if (parsed_line[0][0] == '#' || parsed_line.size()==0){
+        return true;
+    }
+    else if (parsed_line[0] == "sim_params"){
         parsed_line.erase(parsed_line.begin());
         handle_sim_line(parsed_line);
     }
@@ -294,7 +299,12 @@ bool SimParams::handle_line(string& line){
     else if (parsed_line[0] == "clone"){
         parsed_line.erase(parsed_line.begin());
         if (!make_clone(parsed_line)){
-            err_type = "bad clone line";
+            return false;
+        }
+    }
+    else if (parsed_line[0] == "writer"){
+        parsed_line.erase(parsed_line.begin());
+        if (!make_writer(parsed_line)){
             return false;
         }
     }
@@ -305,8 +315,58 @@ bool SimParams::handle_line(string& line){
     return true;
 }
 
+bool SimParams::make_writer(vector<string> &parsed_line){
+    if (parsed_line.size() < 1){
+        err_type = "bad writer parameters";
+        return false;
+    }
+    string type = parsed_line[0];
+    parsed_line.erase(parsed_line.begin());
+    if (type == "IfType2"){
+        IfType2Writer *new_writer = new IfType2Writer(*outfolder);
+        writers->push_back(new_writer);
+    }
+    else if (type == "IsExtinct"){
+        IsExtinctWriter *new_writer = new IsExtinctWriter(*outfolder);
+        writers->push_back(new_writer);
+    }
+    else if (type == "TypeStructure"){
+        TypeStructureWriter *new_writer = new TypeStructureWriter(*outfolder);
+        writers->push_back(new_writer);
+    }
+    else if (type == "AllTypes"){
+        AllTypesWriter *new_writer = new AllTypesWriter(*outfolder);
+        if (!new_writer->readLine(parsed_line)){
+            err_type = "bad AllTypesWriter";
+            return false;
+        }
+        writers->push_back(new_writer);
+    }
+    else if (type == "CellCount"){
+        CellCountWriter *new_writer = new CellCountWriter(*outfolder);
+        if (!new_writer->readLine(parsed_line)){
+            err_type = "bad CellCountWriter";
+            return false;
+        }
+        writers->push_back(new_writer);
+    }
+    else if (type == "FitnessDist"){
+        FitnessDistWriter *new_writer = new FitnessDistWriter(*outfolder);
+        if (!new_writer->readLine(parsed_line)){
+            err_type = "bad FitnessDistWriter";
+            return false;
+        }
+        writers->push_back(new_writer);
+    }
+    else{
+        err_type = "bad writer type";
+        return false;
+    }
+    return true;
+}
+
 bool SimParams::make_clone(vector<string> &parsed_line){
-    if (parsed_line.size() < 5){
+    if (parsed_line.size() < 3){
         err_type = "bad params for Clone";
         return false;
     }
@@ -397,7 +457,7 @@ bool SimParams::handle_sim_line(vector<string>& parsed_line){
 }
 
 bool SimParams::make_mut_handler(){
-    if (mut_type == "ThreeTypesMutation"){
+    if (mut_type == "ThreeTypes"){
         mut_handler = new ThreeTypesMutation();
         if (!mut_handler->read(*mut_params)){
             err_type = "bad mut params";
