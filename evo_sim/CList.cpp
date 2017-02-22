@@ -46,9 +46,9 @@ CList::CList(){
 }
 
 void CList::clearClones(){
+    curr_types.clear();
     for (int i = 0; i < max_types; i++){
-        delete curr_types[i];
-        curr_types[i] = NULL;
+        curr_types.push_back(NULL);
     }
 }
 
@@ -65,10 +65,17 @@ void CList::insertCellType(CellType& new_type) {
     if (curr_types[new_type.getIndex()]){
         throw "type space conflict";
     }
-    end_node->setNext(new_type);
+    if (end_node){
+        end_node->setNext(new_type);
+    }
+    else{
+        root = &new_type;
+    }
+    curr_types[new_type.getIndex()] = &new_type;
     new_type.setPrev(*end_node);
     end_node = &new_type;
     addCells(new_type.getNumCells(), new_type.getBirthRate());
+    new_type.setCloneList(*this);
 }
 
 void CList::deleteList()
@@ -76,7 +83,7 @@ void CList::deleteList()
     CellType *pnode = root;
     while(root!=NULL) {
         pnode = root;
-        root = &root->getNext();
+        root = root->getNext();
         delete pnode;
     }
     
@@ -86,9 +93,9 @@ void CList::advance()
 {
     uniform_real_distribution<double> runif;
     
-    time += -log(runif(eng2))/tot_rate;
-    double b_or_d = runif(eng2)*tot_rate;
-    if (b_or_d < d * tot_cell_count){
+    time += -log(runif(eng2))/(tot_rate + d*tot_cell_count);
+    double b_or_d = runif(eng2)*(tot_rate + d*tot_cell_count);
+    if (b_or_d < (d * tot_cell_count)){
         Clone& dead = chooseDead();
         if (dead.isSingleCell()){
             delete &dead;
@@ -107,10 +114,10 @@ Clone& CList::chooseReproducer(){
     uniform_real_distribution<double> runif;
     
     double ran = runif(eng2) * tot_rate;
-    Clone *reproducer = &root->getRoot();
+    Clone *reproducer = root->getRoot();
     double curr_rate = reproducer->getTotalBirth();
     while (curr_rate < ran && reproducer){
-        reproducer = &reproducer->getNextClone();
+        reproducer = reproducer->getNextClone();
         curr_rate += reproducer->getTotalBirth();
     }
     return *reproducer;
@@ -120,10 +127,10 @@ Clone& CList::chooseDead(){
     uniform_real_distribution<double> runif;
     
     double ran = runif(eng2) * tot_cell_count;
-    Clone *dead = &root->getRoot();
+    Clone *dead = root->getRoot();
     double curr_rate = dead->getCellCount();
-    while (curr_rate < ran && dead){
-        dead = &dead->getNextClone();
+    while (curr_rate < ran && dead->getNextClone()){
+        dead = dead->getNextClone();
         curr_rate += dead->getCellCount();
     }
     return *dead;
@@ -172,6 +179,7 @@ bool CList::handle_line(vector<string>& parsed_line){
     else{
         return false;
     }
+    
     return true;
 }
 

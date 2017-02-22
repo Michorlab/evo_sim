@@ -40,16 +40,22 @@ int main(int argc, char *argv[]){
     }
     
     if (infilename=="" || outfolder==""){
-        cout << "argument issues";
+        cout << "argument issues" << endl;
         return 1;
     }
     
     ofstream errfile;
     errfile.open(outfolder+"input_err.eevo");
     vector<OutputWriter*> writers;
-    
     ifstream infile;
     infile.open(infilename);
+    cout << infilename << endl;
+    if (!infile.is_open()){
+        cout << "bad input file location" << endl;
+        cout << infilename << endl;
+        return 1;
+    }
+    
     CList clone_list = CList();
     SimParams params(clone_list, writers, outfolder);
     if (!params.read(infile)){
@@ -60,12 +66,11 @@ int main(int argc, char *argv[]){
     }
     
     errfile.close();
-    
     for (int i=0; i<params.getNumSims(); i++){
         for (vector<OutputWriter *>::iterator it = writers.begin(); it != writers.end(); ++it){
             (*it)->beginAction(clone_list);
         }
-        while (clone_list.getCurrTime() < params.getMaxTime() && clone_list.getNumCells() < params.getMaxCells() && !clone_list.noTypesLeft()){
+        while (clone_list.getCurrTime() < params.getMaxTime() && clone_list.getNumCells() < params.getMaxCells() && !clone_list.noTypesLeft() && !clone_list.isExtinct()){
             clone_list.advance();
             for (vector<OutputWriter *>::iterator it = writers.begin(); it != writers.end(); ++it){
                 (*it)->duringSimAction(clone_list);
@@ -106,6 +111,7 @@ void CellType::subtractOneCell(double b){
 void CellType::addCells(int num, double b){
     num_cells += num;
     total_birth_rate += b*num;
+    
     clone_list->addCells(num, b);
 }
 
@@ -115,17 +121,22 @@ CellType::~CellType(){
     while (to_delete){
         next = &to_delete->getNextWithinType();
         delete to_delete;
+        to_delete = next;
     }
 }
 
 void CellType::unlinkType(){
-    next_node->setPrev(*prev_node);
-    prev_node->setNext(*next_node);
+    if (next_node){
+        next_node->setPrev(*prev_node);
+    }
+    if (prev_node){
+        prev_node->setNext(*next_node);
+    }
 }
 
 MutationHandler& CellType::getMutHandler(){
     return clone_list->getMutHandler();
-};
+}
 
 void CellType::insertClone(Clone &new_clone){
     addCells(new_clone.getCellCount(), new_clone.getBirthRate());
@@ -180,14 +191,16 @@ void ThreeTypesMutation::generateMutant(CellType& type, double b, double mut){
 }
 
 bool ThreeTypesMutation::read(std::vector<string>& params){
-    stringstream ss;
+    
     string pre;
     string post;
     bool isMu2 = false;
     bool isFit1 = false;
     bool isFit2 = false;
     for (int i=0; i<params.size(); i++){
-        ss.str(params[i]);
+        string tok = params[i];
+        stringstream ss;
+        ss.str(tok);
         getline(ss, pre, ',');
         if (!getline(ss, post)){
             return false;
@@ -241,7 +254,7 @@ void SimParams::refreshSim(ifstream& infile){
     
     while (getline(infile, line)){
         ss.str(line);
-        while (getline(ss, tok, '\t')){
+        while (getline(ss, tok, ' ')){
             parsed_line.push_back(tok);
         }
         if (parsed_line[0] == "clone"){
@@ -259,7 +272,6 @@ bool SimParams::read(ifstream& infile){
     while (getline(infile, line)){
         if (!handle_line(line)){
             err_line = line_num;
-            err_type = "can't read line";
             return false;
         }
         line_num++;
@@ -271,6 +283,7 @@ bool SimParams::read(ifstream& infile){
         err_type = "no clones added successfully";
         return false;
     }
+    clone_list->setMutHandler(*mut_handler);
     return true;
 }
 
@@ -279,7 +292,7 @@ bool SimParams::handle_line(string& line){
     ss.str(line);
     string tok;
     std::vector<string> parsed_line;
-    while (getline(ss, tok, '\t')){
+    while (getline(ss, tok, ' ')){
         parsed_line.push_back(tok);
     }
     if (parsed_line[0][0] == '#' || parsed_line.size()==0){
@@ -309,7 +322,7 @@ bool SimParams::handle_line(string& line){
         }
     }
     else{
-        err_type = "bad first keyword";
+        err_type = "bad first keyword " + parsed_line[0];
         return false;
     }
     return true;
@@ -374,15 +387,17 @@ bool SimParams::make_clone(vector<string> &parsed_line){
     parsed_line.erase(parsed_line.begin());
     int type_id = stoi(parsed_line[0]);
     int num_cells = stoi(parsed_line[1]);
+    
     if (clone_list->getTypeByIndex(type_id)){
         err_type = "type space conflict";
         return false;
     }
+    
     CellType *new_type = new CellType(type_id, NULL);
+    
     clone_list->addRootType(*new_type);
     clone_list->insertCellType(*new_type);
     parsed_line.erase(parsed_line.begin());
-    
     if (type == "Simple"){
         if (parsed_line.size() != 3){
             err_type = "bad params for SimpleClone";
@@ -415,8 +430,10 @@ bool SimParams::make_clone(vector<string> &parsed_line){
         }
         Clone *new_clone;
         for (int i=0; i<num_cells; i++){
+            
             new_clone = new HeritableClone(*new_type);
             if (!new_clone->readLine(parsed_line)){
+                err_type = "bad clone";
                 return false;
             }
             new_type->insertClone(*new_clone);
@@ -442,6 +459,9 @@ bool SimParams::handle_sim_line(vector<string>& parsed_line){
     }
     else if (parsed_line[0] == "max_time"){
         max_time = stoi(parsed_line[1]);
+    }
+    else if (parsed_line[0] == "max_cells"){
+        max_cells = stoi(parsed_line[1]);
     }
     else if (parsed_line[0] == "mut_handler_type"){
         mut_type = parsed_line[1];

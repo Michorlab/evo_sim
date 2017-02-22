@@ -95,6 +95,10 @@ public:
         return *mut_model;
     }
     
+    void setMutHandler(MutationHandler& mut_handle){
+        mut_model = &mut_handle;
+    }
+    
     void addRootType(CellType& new_root){
         root_types.push_back(&new_root);
     }

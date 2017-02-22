@@ -32,7 +32,7 @@ protected:
     
     void addCells(int num_cells);
     bool checkRep(){
-        return (mut_prob < 0 || birth_rate < 0 || cell_count <= 0);
+        return !(mut_prob < 0 || birth_rate < 0 || cell_count <= 0);
     }
 public:
     /* adjusts the linked list so the clone is no longer in the list. adjusts root and end of cell_type as appropriate.
@@ -76,7 +76,7 @@ public:
         return *cell_type;
     }
     
-    Clone& getNextClone();
+    Clone* getNextClone();
     
     /* removes one cell from this clone's population
      should not be called if there is <=1 cell left in the clone

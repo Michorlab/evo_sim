@@ -44,11 +44,16 @@ Clone::~Clone(){
     }
 }
 
-Clone& Clone::getNextClone(){
+Clone* Clone::getNextClone(){
     if (!next_node){
-        return cell_type->getNext().getRoot();
+        if (!cell_type->getNext()){
+            return NULL;
+        }
+        else{
+            return (cell_type->getNext())->getRoot();
+        }
     }
-    return *next_node;
+    return next_node;
 }
 
 SimpleClone::SimpleClone(CellType& type, double b, double mut, int num_cells) : Clone(type, mut){
@@ -150,7 +155,7 @@ void HeritableClone::reproduce(){
         mut_handle.getNewType().insertClone(*new_node);
     }
     else{
-        TypeSpecificClone *new_node = new TypeSpecificClone(*cell_type, birth_rate, var, mut_prob);
+        HeritableClone *new_node = new HeritableClone(*cell_type, birth_rate, var, mut_prob);
         cell_type->insertClone(*new_node);
     }
 }

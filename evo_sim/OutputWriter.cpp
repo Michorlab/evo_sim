@@ -97,6 +97,7 @@ bool CellCountWriter::readLine(vector<string>& parsed_line){
 
 void CellCountWriter::beginAction(CList& clone_list){
     string ofile_middle = "count_sim_"+to_string(sim_number);
+    cout << ofile_loc + ofile_middle + ofile_name << endl;
     outfile.open(ofile_loc + ofile_middle + ofile_name);
     outfile << "data for cell type " << index << " sim number " << sim_number << endl;
     outfile << clone_list.getCurrTime() << ", " << clone_list.getTypeByIndex(index)->getNumCells() << endl;
@@ -137,6 +138,7 @@ void AllTypesWriter::beginAction(CList& clone_list){
         type_index = (*it)->getIndex();
         CellCountWriter *new_writer = new CellCountWriter(ofile_loc, writing_period, type_index, sim_number);
         writers.push_back(new_writer);
+        new_writer->beginAction(clone_list);
     }
 }
 
@@ -261,7 +263,7 @@ FitnessDistWriter::~FitnessDistWriter(){
 }
 
 void FitnessDistWriter::write_dist(ofstream& outfile, CList& clone_list){
-    Clone *curr_clone = &(clone_list.getTypeByIndex(index)->getRoot());
+    Clone *curr_clone = (clone_list.getTypeByIndex(index)->getRoot());
     while (curr_clone){
         int num_cells = curr_clone->getCellCount();
         for (int i=0; i<num_cells; i++){

@@ -52,6 +52,9 @@ private:
     void addCells(int num, double b);
     // called every time a cell of this type dies
     void subtractOneCell(double b);
+    void setCloneList(CList& clist){
+        clone_list = &clist;
+    }
 public:
     /* @param i cell type id. should be unique in the clone list typespace.
      @param parent_type cell type that formed this type, via mutation. if one of the original types in simulation, then NULL.
@@ -70,8 +73,8 @@ public:
     std::vector<CellType *>& getChildren(){
         return children;
     }
-    CellType& getParent(){
-        return *parent;
+    CellType* getParent(){
+        return parent;
     }
     bool isExtinct(){
         return num_cells == 0;
@@ -87,14 +90,14 @@ public:
         return total_birth_rate;
     }
 
-    CellType& getNext(){
-        return *next_node;
+    CellType* getNext(){
+        return next_node;
     }
-    Clone& getRoot(){
-        return *root_node;
+    Clone* getRoot(){
+        return root_node;
     }
-    Clone& getEnd(){
-        return *end_node;
+    Clone* getEnd(){
+        return end_node;
     }
     MutationHandler& getMutHandler();
     CList& getPopulation(){

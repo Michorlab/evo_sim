@@ -26,7 +26,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		B193FCF01E581711006DB43D /* evo_sim */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = evo_sim; sourceTree = BUILT_PRODUCTS_DIR; };
+		B193FCF01E581711006DB43D /* evo_sim */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "compiled.mach-o.executable"; path = evo_sim; sourceTree = BUILT_PRODUCTS_DIR; };
 		B193FCF31E581711006DB43D /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
 		B193FCFA1E581735006DB43D /* CList.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = CList.cpp; sourceTree = "<group>"; };
 		B193FCFB1E581735006DB43D /* Clone.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Clone.cpp; sourceTree = "<group>"; };
