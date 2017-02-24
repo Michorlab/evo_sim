@@ -9,10 +9,10 @@
 #include <cstdlib>
 #include <iomanip>
 #include <vector>
+#include "CList.h"
 
 using namespace std;
 
-class CList;
 class Clone;
 class MutationHandler;
 class OutputWriter;
@@ -106,14 +106,63 @@ public:
     void insertClone(Clone& new_clone);
 };
 
+class EndListener{
+public:
+    virtual bool shouldEnd(CList& clone_list) = 0;
+    virtual bool readLine(vector<string>& parsed_line) = 0;
+};
+
+class MaxCellsListener: public EndListener{
+private:
+    int max_cells;
+public:
+    MaxCellsListener();
+    bool readLine(vector<string>& parsed_line);
+    bool shouldEnd(CList& clone_list);
+};
+
+class CompositeListener: public EndListener{
+private:
+    vector<EndListener*> *listeners;
+public:
+    CompositeListener();
+    ~CompositeListener();
+    bool shouldEnd(CList& clone_list);
+    bool readLine(vector<string>& parsed_line){return true;}
+    void addListener(EndListener& listener);
+};
+
+class MaxTimeListener: public EndListener{
+private:
+    double max_time;
+public:
+    MaxTimeListener();
+    bool readLine(vector<string>& parsed_line);
+    bool shouldEnd(CList& clone_list);
+};
+
+class OneTypeListener: public EndListener{
+public:
+    bool readLine(vector<string>& parsed_line){return true;}
+    bool shouldEnd(CList& clone_list);
+};
+
+class HasTypeListener: public EndListener{
+private:
+    int type;
+    double threshold;
+public:
+    HasTypeListener();
+    bool readLine(vector<string>& parsed_line);
+    bool shouldEnd(CList& clone_list);
+};
+
 class SimParams{
     /* loads and stores simulation parameters from an input file. see readme for more info on input formatting.
      also initializes key simulation objects (CList and Clones) as appropriate.
      */
 private:
     int num_simulations;
-    double max_time;
-    int max_cells;
     MutationHandler *mut_handler;
     CList *clone_list;
     bool handle_line(string& line);
@@ -127,16 +176,18 @@ private:
     bool make_mut_handler();
     bool make_clone(vector<string>& parsed_line);
     bool make_writer(vector<string>& parsed_line);
+    bool make_listener(vector<string>& parsed_line);
     int err_line;
     string err_type;
     string mut_type;
     string sim_name;
     vector<OutputWriter*> *writers;
+    CompositeListener *listeners;
     std::vector<string> *mut_params;
 
 public:
     // initial clone list and writer list should be empty, read method will fill it.
-    SimParams(CList& clist, vector<OutputWriter*>& writer_list, string& output);
+    SimParams(CList& clist, vector<OutputWriter*>& writer_list, CompositeListener& listener, string& output);
     
     /* reads an input file and loads parameters
      MUTATES clone_list, makes new Clones
@@ -146,8 +197,6 @@ public:
     bool read(ifstream& infile);
     void writeErrors(ofstream& errfile);
     int getNumSims(){return num_simulations;}
-    double getMaxTime(){return max_time;}
-    int getMaxCells(){return max_cells;}
     string getName(){return sim_name;}
     MutationHandler& get_mut_handler(){return *mut_handler;}
     void refreshSim(ifstream& infile);

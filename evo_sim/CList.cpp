@@ -190,3 +190,11 @@ bool CList::handle_line(vector<string>& parsed_line){
 bool CList::checkInit(){
     return (max_types && mut_model);
 }
+
+bool CList::isOneType(){
+    return root->getNext();
+}
+
+int CList::newestType(){
+    return end_node->getIndex();
+}

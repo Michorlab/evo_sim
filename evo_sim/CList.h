@@ -17,7 +17,6 @@
 #include "main.h"
 
 using namespace std;
-class MutationHandler;
 
 class CList {
     friend class CellType;
@@ -111,9 +110,7 @@ public:
         return tot_cell_count == 0;
     }
     
-    int newestType(){
-        return end_node->getIndex();
-    }
+    int newestType();
     
     bool noTypesLeft(){
         return num_types == max_types;
@@ -127,6 +124,7 @@ public:
     
     long long getNumCells(){return tot_cell_count;}
     
+    bool isOneType();
 };
 
 #endif /* clist_h */

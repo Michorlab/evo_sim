@@ -57,7 +57,8 @@ int main(int argc, char *argv[]){
     }
     
     CList clone_list = CList();
-    SimParams params(clone_list, writers, outfolder);
+    CompositeListener end_conditions = CompositeListener();
+    SimParams params(clone_list, writers, end_conditions, outfolder);
     if (!params.read(infile)){
         params.writeErrors(errfile);
         cout << "bad input file: check error file." << endl;
@@ -67,11 +68,12 @@ int main(int argc, char *argv[]){
     }
     infile.close();
     errfile.close();
+    
     for (int i=0; i<params.getNumSims(); i++){
         for (vector<OutputWriter *>::iterator it = writers.begin(); it != writers.end(); ++it){
             (*it)->beginAction(clone_list);
         }
-        while (clone_list.getCurrTime() < params.getMaxTime() && clone_list.getNumCells() < params.getMaxCells() && !clone_list.noTypesLeft() && !clone_list.isExtinct()){
+        while (!clone_list.noTypesLeft() && !clone_list.isExtinct() && !end_conditions.shouldEnd(clone_list)){
             clone_list.advance();
             for (vector<OutputWriter *>::iterator it = writers.begin(); it != writers.end(); ++it){
                 (*it)->duringSimAction(clone_list);
@@ -154,14 +156,91 @@ void CellType::insertClone(Clone &new_clone){
 }
 
 //----------EndListeners----------------
+MaxTimeListener::MaxTimeListener(){
+    max_time = 0;
+}
 
+MaxCellsListener::MaxCellsListener(){
+    max_cells = 0;
+}
+
+bool MaxCellsListener::readLine(vector<string>& parsed_line){
+    try {
+        max_cells = stoi(parsed_line[0]);
+    }
+    catch (...){
+        return false;
+    }
+    return true;
+}
+
+bool MaxTimeListener::readLine(vector<string>& parsed_line){
+    try {
+        max_time = stod(parsed_line[0]);
+    }
+    catch (...){
+        return false;
+    }
+    return true;
+}
+
+bool MaxCellsListener::shouldEnd(CList& clone_list){
+    return clone_list.getNumCells() >= max_cells;
+}
+
+bool MaxTimeListener::shouldEnd(CList& clone_list){
+    return clone_list.getCurrTime() >= max_time;
+}
+
+bool HasTypeListener::readLine(vector<string>& parsed_line){
+    try {
+        type = stoi(parsed_line[0]);
+        threshold = stod(parsed_line[1]);
+    }
+    catch (...){
+        return false;
+    }
+    return true;
+}
+
+HasTypeListener::HasTypeListener(){
+    type = 0;
+    threshold = 0;
+}
+
+bool HasTypeListener::shouldEnd(CList& clone_list){
+    CellType *new_type = clone_list.getTypeByIndex(type);
+    return new_type && new_type->getNumCells() >= threshold;
+}
+
+bool OneTypeListener::shouldEnd(CList& clone_list){
+    return clone_list.isOneType();
+}
+
+CompositeListener::CompositeListener(){
+    listeners = new vector<EndListener*>();
+}
+
+bool CompositeListener::shouldEnd(CList& clone_list){
+    bool flag = false;
+    for (vector<EndListener *>::iterator it = listeners->begin(); it != listeners->end(); ++it){
+        flag = flag || (*it)->shouldEnd(clone_list);
+    }
+    return flag;
+}
+
+void CompositeListener::addListener(EndListener& listener){
+    listeners->push_back(&listener);
+}
+
+CompositeListener::~CompositeListener(){
+    listeners->clear();
+}
 
 //--------------SimParams-----------
 
-SimParams::SimParams(CList& clist, vector<OutputWriter*>& writer_list, string& output){
+SimParams::SimParams(CList& clist, vector<OutputWriter*>& writer_list, CompositeListener& listener, string& output){
     num_simulations = 0;
-    max_time = 0;
-    max_cells = 0;
     mut_handler = NULL;
     err_type = "";
     err_line = 0;
@@ -171,6 +250,7 @@ SimParams::SimParams(CList& clist, vector<OutputWriter*>& writer_list, string& o
     clone_list = &clist;
     writers = &writer_list;
     outfolder = &output;
+    listeners = &listener;
 }
 
 void SimParams::refreshSim(ifstream& infile){
@@ -252,10 +332,45 @@ bool SimParams::handle_line(string& line){
             return false;
         }
     }
+    else if (parsed_line[0] == "listener"){
+        parsed_line.erase(parsed_line.begin());
+        if (!make_listener(parsed_line)){
+            return false;
+        }
+    }
     else{
         err_type = "bad first keyword " + parsed_line[0];
         return false;
     }
+    return true;
+}
+
+bool SimParams::make_listener(vector<string> &parsed_line){
+    if (parsed_line.size() < 1){
+        err_type = "bad writer parameters";
+        return false;
+    }
+    string type = parsed_line[0];
+    parsed_line.erase(parsed_line.begin());
+    EndListener *new_listener;
+    if (type == "HasType"){
+        new_listener = new HasTypeListener();
+    }
+    else if (type == "OneType"){
+        new_listener = new OneTypeListener();
+        
+    }
+    else if (type == "MaxTime"){
+        new_listener = new MaxTimeListener();
+    }
+    else if (type == "MaxCells"){
+        new_listener = new MaxCellsListener();
+    }
+    if (!new_listener->readLine(parsed_line)){
+        err_type = "bad listener params";
+        return false;
+    }
+    listeners->addListener(*new_listener);
     return true;
 }
 
@@ -387,12 +502,6 @@ bool SimParams::handle_sim_line(vector<string>& parsed_line){
     }
     if (parsed_line[0] == "num_simulations"){
         num_simulations = stoi(parsed_line[1]);
-    }
-    else if (parsed_line[0] == "max_time"){
-        max_time = stoi(parsed_line[1]);
-    }
-    else if (parsed_line[0] == "max_cells"){
-        max_cells = stoi(parsed_line[1]);
     }
     else if (parsed_line[0] == "mut_handler_type"){
         mut_type = parsed_line[1];
