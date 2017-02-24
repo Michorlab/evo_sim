@@ -11,6 +11,7 @@
 		B193FD001E581735006DB43D /* CList.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B193FCFA1E581735006DB43D /* CList.cpp */; };
 		B193FD011E581735006DB43D /* Clone.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B193FCFB1E581735006DB43D /* Clone.cpp */; };
 		B193FD041E5CAB40006DB43D /* OutputWriter.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B193FD021E5CAB40006DB43D /* OutputWriter.cpp */; };
+		B193FD071E5FD080006DB43D /* MutationHandler.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B193FD051E5FD080006DB43D /* MutationHandler.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -36,6 +37,8 @@
 		B193FCFF1E581735006DB43D /* readme.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = readme.txt; sourceTree = "<group>"; };
 		B193FD021E5CAB40006DB43D /* OutputWriter.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = OutputWriter.cpp; sourceTree = "<group>"; };
 		B193FD031E5CAB40006DB43D /* OutputWriter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = OutputWriter.h; sourceTree = "<group>"; };
+		B193FD051E5FD080006DB43D /* MutationHandler.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MutationHandler.cpp; sourceTree = "<group>"; };
+		B193FD061E5FD080006DB43D /* MutationHandler.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MutationHandler.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -69,6 +72,8 @@
 			isa = PBXGroup;
 			children = (
 				B193FCF31E581711006DB43D /* main.cpp */,
+				B193FD051E5FD080006DB43D /* MutationHandler.cpp */,
+				B193FD061E5FD080006DB43D /* MutationHandler.h */,
 				B193FCFA1E581735006DB43D /* CList.cpp */,
 				B193FCFB1E581735006DB43D /* Clone.cpp */,
 				B193FCFC1E581735006DB43D /* CList.h */,
@@ -138,6 +143,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B193FD071E5FD080006DB43D /* MutationHandler.cpp in Sources */,
 				B193FCF41E581711006DB43D /* main.cpp in Sources */,
 				B193FD011E581735006DB43D /* Clone.cpp in Sources */,
 				B193FD001E581735006DB43D /* CList.cpp in Sources */,

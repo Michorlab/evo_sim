@@ -59,6 +59,8 @@ void CList::refreshSim(){
     time = 0;
     tot_cell_count = 0;
     num_types = 0;
+    root = NULL;
+    end_node = NULL;
 }
 
 void CList::insertCellType(CellType& new_type) {
@@ -76,15 +78,17 @@ void CList::insertCellType(CellType& new_type) {
     end_node = &new_type;
     addCells(new_type.getNumCells(), new_type.getBirthRate());
     new_type.setCloneList(*this);
+    num_types++;
 }
 
 void CList::deleteList()
 {
-    CellType *pnode = root;
-    while(root!=NULL) {
-        pnode = root;
-        root = root->getNext();
-        delete pnode;
+    CellType *to_delete = root;
+    CellType *next = to_delete->getNext();
+    while(next) {
+        to_delete = next;
+        next = to_delete->getNext();
+        delete to_delete;
     }
     
 }
@@ -116,7 +120,7 @@ Clone& CList::chooseReproducer(){
     double ran = runif(eng2) * tot_rate;
     Clone *reproducer = root->getRoot();
     double curr_rate = reproducer->getTotalBirth();
-    while (curr_rate < ran && reproducer){
+    while (curr_rate < ran && reproducer->getNextClone()){
         reproducer = reproducer->getNextClone();
         curr_rate += reproducer->getTotalBirth();
     }

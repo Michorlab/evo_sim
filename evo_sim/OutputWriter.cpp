@@ -97,7 +97,6 @@ bool CellCountWriter::readLine(vector<string>& parsed_line){
 
 void CellCountWriter::beginAction(CList& clone_list){
     string ofile_middle = "count_sim_"+to_string(sim_number);
-    cout << ofile_loc + ofile_middle + ofile_name << endl;
     outfile.open(ofile_loc + ofile_middle + ofile_name);
     outfile << "data for cell type " << index << " sim number " << sim_number << endl;
     outfile << clone_list.getCurrTime() << ", " << clone_list.getTypeByIndex(index)->getNumCells() << endl;
@@ -213,7 +212,9 @@ IfType2Writer::IfType2Writer(string ofile): FinalOutputWriter(ofile){
 }
 
 void IfType2Writer::finalAction(CList& clone_list){
-    outfile << sim_number << ", " << (clone_list.getTypeByIndex(2)->getNumCells() > 0) << endl;
+    bool is_2 = clone_list.getTypeByIndex(2);
+    is_2 = is_2 && (clone_list.getTypeByIndex(2)->getNumCells() > 0);
+    outfile << sim_number << ", " << is_2 << endl;
     sim_number++;
 }
 

@@ -16,6 +16,7 @@
 #include "Clone.h"
 #include "CList.h"
 #include "OutputWriter.h"
+#include "MutationHandler.h"
 
 using namespace std;
 
@@ -49,7 +50,6 @@ int main(int argc, char *argv[]){
     vector<OutputWriter*> writers;
     ifstream infile;
     infile.open(infilename);
-    cout << infilename << endl;
     if (!infile.is_open()){
         cout << "bad input file location" << endl;
         cout << infilename << endl;
@@ -60,11 +60,12 @@ int main(int argc, char *argv[]){
     SimParams params(clone_list, writers, outfolder);
     if (!params.read(infile)){
         params.writeErrors(errfile);
+        cout << "bad input file: check error file." << endl;
         infile.close();
         errfile.close();
         return 1;
     }
-    
+    infile.close();
     errfile.close();
     for (int i=0; i<params.getNumSims(); i++){
         for (vector<OutputWriter *>::iterator it = writers.begin(); it != writers.end(); ++it){
@@ -79,10 +80,11 @@ int main(int argc, char *argv[]){
         for (vector<OutputWriter *>::iterator it = writers.begin(); it != writers.end(); ++it){
             (*it)->finalAction(clone_list);
         }
+        infile.open(infilename);
         params.refreshSim(infile);
+        infile.close();
     }
     writers.clear();
-    infile.close();
     return 0;
 }
 
@@ -151,81 +153,8 @@ void CellType::insertClone(Clone &new_clone){
     }
 }
 
-//----------MutationHandlers----------------
+//----------EndListeners----------------
 
-ThreeTypesMutation::ThreeTypesMutation(double m2, double f1, double f2){
-    mu2 = m2;
-    fit1 = f1;
-    fit2 = f2;
-    birth_rate = 0;
-    mut_prob = 0;
-    new_type = NULL;
-}
-
-CellType* MutationHandler::getNewTypeByIndex(int index, CellType& curr_type){
-    CList *clone_list = &curr_type.getPopulation();
-    if (clone_list->getTypeByIndex(index)){
-        return clone_list->getTypeByIndex(index);
-    }
-    else{
-        CellType *new_type = new CellType(index, &curr_type);
-        clone_list->insertCellType(*new_type);
-        return new_type;
-    }
-}
-
-void ThreeTypesMutation::generateMutant(CellType& type, double b, double mut){
-    if (!(type.getIndex() <= 1)){
-        throw "bad three types mutating cell type";
-    }
-    if (type.getIndex() == 1){
-        birth_rate = b + fit2;
-        mut_prob = 0;
-        new_type = getNewTypeByIndex(2, type);
-    }
-    else if (type.getIndex() == 0){
-        birth_rate = b + fit1;
-        mut_prob = mu2;
-        new_type = getNewTypeByIndex(1, type);
-    }
-}
-
-bool ThreeTypesMutation::read(std::vector<string>& params){
-    
-    string pre;
-    string post;
-    bool isMu2 = false;
-    bool isFit1 = false;
-    bool isFit2 = false;
-    for (int i=0; i<params.size(); i++){
-        string tok = params[i];
-        stringstream ss;
-        ss.str(tok);
-        getline(ss, pre, ',');
-        if (!getline(ss, post)){
-            return false;
-        }
-        if (pre=="mu2"){
-            isMu2 = true;
-            mu2 = stod(post);
-        }
-        else if (pre=="fit1"){
-            isFit1 = true;
-            fit1 = stod(post);
-        }
-        else if (pre=="fit2"){
-            isFit2 = true;
-            fit2 = stod(post);
-        }
-        else{
-            return false;
-        }
-    }
-    if (!isMu2 || !isFit1 || !isFit2){
-        return false;
-    }
-    return true;
-}
 
 //--------------SimParams-----------
 
@@ -247,12 +176,13 @@ SimParams::SimParams(CList& clist, vector<OutputWriter*>& writer_list, string& o
 void SimParams::refreshSim(ifstream& infile){
     clone_list->refreshSim();
     string line;
-    std::stringstream ss;
+    
     
     string tok;
     std::vector<string> parsed_line;
     
     while (getline(infile, line)){
+        std::stringstream ss;
         ss.str(line);
         while (getline(ss, tok, ' ')){
             parsed_line.push_back(tok);
@@ -261,6 +191,7 @@ void SimParams::refreshSim(ifstream& infile){
             parsed_line.erase(parsed_line.begin());
             make_clone(parsed_line);
         }
+        parsed_line.clear();
     }
 
 }
@@ -479,14 +410,22 @@ bool SimParams::handle_sim_line(vector<string>& parsed_line){
 bool SimParams::make_mut_handler(){
     if (mut_type == "ThreeTypes"){
         mut_handler = new ThreeTypesMutation();
-        if (!mut_handler->read(*mut_params)){
-            err_type = "bad mut params";
-            return false;
-        }
-        return true;
     }
-    err_type = "bad mut type";
-    return false;
+    else if (mut_type == "Neutral"){
+        mut_handler = new NeutralMutation();
+    }
+    else if (mut_type == "None"){
+        mut_handler = new NoMutation();
+    }
+    else{
+        err_type = "bad mut type";
+        return false;
+    }
+    if (!mut_handler->read(*mut_params)){
+        err_type = "bad mut params";
+        return false;
+    }
+    return true;
 }
 
 void SimParams::writeErrors(ofstream& errfile){
