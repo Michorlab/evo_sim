@@ -18,8 +18,6 @@
 #include "OutputWriter.h"
 #include "MutationHandler.h"
 
-using namespace std;
-
 // initialize RNG
 int seed1 =  std::chrono::high_resolution_clock::now().time_since_epoch().count();
 mt19937 eng(seed1);
@@ -95,7 +93,7 @@ int main(int argc, char *argv[]){
 CellType::CellType(int i, CellType *parent_type){
     index = i;
     parent = parent_type;
-    children = std::vector<CellType *> {};
+    children = std::vector<CellType *>();
     num_cells = 0;
     root_node = NULL;
     end_node = NULL;
@@ -176,7 +174,7 @@ bool MaxCellsListener::readLine(vector<string>& parsed_line){
 
 bool MaxTimeListener::readLine(vector<string>& parsed_line){
     try {
-        max_time = stod(parsed_line[0]);
+        max_time = std::stod(parsed_line[0]);
     }
     catch (...){
         return false;
@@ -347,7 +345,7 @@ bool SimParams::handle_line(string& line){
 
 bool SimParams::make_listener(vector<string> &parsed_line){
     if (parsed_line.size() < 1){
-        err_type = "bad writer parameters";
+        err_type = "bad listener parameters";
         return false;
     }
     string type = parsed_line[0];
@@ -366,6 +364,10 @@ bool SimParams::make_listener(vector<string> &parsed_line){
     else if (type == "MaxCells"){
         new_listener = new MaxCellsListener();
     }
+    else{
+        err_type = "bad listener type";
+        return false;
+    }
     if (!new_listener->readLine(parsed_line)){
         err_type = "bad listener params";
         return false;
@@ -379,48 +381,39 @@ bool SimParams::make_writer(vector<string> &parsed_line){
         err_type = "bad writer parameters";
         return false;
     }
+    OutputWriter *new_writer;
     string type = parsed_line[0];
     parsed_line.erase(parsed_line.begin());
     if (type == "IfType2"){
-        IfType2Writer *new_writer = new IfType2Writer(*outfolder);
-        writers->push_back(new_writer);
+        new_writer = new IfType2Writer(*outfolder);
     }
     else if (type == "IsExtinct"){
-        IsExtinctWriter *new_writer = new IsExtinctWriter(*outfolder);
-        writers->push_back(new_writer);
+        new_writer = new IsExtinctWriter(*outfolder);
     }
     else if (type == "TypeStructure"){
-        TypeStructureWriter *new_writer = new TypeStructureWriter(*outfolder);
-        writers->push_back(new_writer);
+        new_writer = new TypeStructureWriter(*outfolder);
     }
     else if (type == "AllTypes"){
-        AllTypesWriter *new_writer = new AllTypesWriter(*outfolder);
-        if (!new_writer->readLine(parsed_line)){
-            err_type = "bad AllTypesWriter";
-            return false;
-        }
-        writers->push_back(new_writer);
+        new_writer = new AllTypesWriter(*outfolder);
     }
     else if (type == "CellCount"){
-        CellCountWriter *new_writer = new CellCountWriter(*outfolder);
-        if (!new_writer->readLine(parsed_line)){
-            err_type = "bad CellCountWriter";
-            return false;
-        }
-        writers->push_back(new_writer);
+        new_writer = new CellCountWriter(*outfolder);
     }
     else if (type == "FitnessDist"){
-        FitnessDistWriter *new_writer = new FitnessDistWriter(*outfolder);
-        if (!new_writer->readLine(parsed_line)){
-            err_type = "bad FitnessDistWriter";
-            return false;
-        }
-        writers->push_back(new_writer);
+        new_writer = new FitnessDistWriter(*outfolder);
+    }
+    else if (type == "MeanFit"){
+        new_writer = new MeanFitWriter(*outfolder);
     }
     else{
         err_type = "bad writer type";
         return false;
     }
+    if (!new_writer->readLine(parsed_line)){
+        err_type = "bad writer params";
+        return false;
+    }
+    writers->push_back(new_writer);
     return true;
 }
 

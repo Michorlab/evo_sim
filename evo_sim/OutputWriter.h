@@ -28,6 +28,7 @@ public:
     virtual void finalAction(CList& clone_list) = 0;
     virtual void duringSimAction(CList& clone_list) = 0;
     virtual void beginAction(CList& clone_list) = 0;
+    virtual bool readLine(vector<string>& parsed_line) = 0;
 };
 
 class FinalOutputWriter: public OutputWriter{
@@ -38,6 +39,7 @@ public:
     virtual void finalAction(CList& clone_list) = 0;
     void duringSimAction(CList& clone_list){};
     virtual void beginAction(CList& clone_list) = 0;
+    virtual bool readLine(vector<string>& parsed_line) = 0;
 };
 
 class DuringOutputWriter: public OutputWriter{
@@ -51,6 +53,7 @@ public:
     virtual void finalAction(CList& clone_list) = 0;
     virtual void duringSimAction(CList& clone_list) = 0;
     virtual void beginAction(CList& clone_list) = 0;
+    virtual bool readLine(vector<string>& parsed_line) = 0;
 };
 
 class TypeStructureWriter: public FinalOutputWriter{
@@ -61,6 +64,7 @@ public:
     ~TypeStructureWriter();
     void finalAction(CList& clone_list);
     void beginAction(CList& clone_list);
+    bool readLine(vector<string>& parsed_line){return true;}
 };
 
 class CellCountWriter: public DuringOutputWriter{
@@ -100,6 +104,24 @@ public:
     }
 };
 
+class MeanFitWriter: public DuringOutputWriter{
+private:
+    int index;
+    int sim_number;
+    ofstream outfile;
+public:
+    ~MeanFitWriter();
+    MeanFitWriter(string ofile, int period, int i, int sim);
+    MeanFitWriter(string ofile);
+    void finalAction(CList& clone_list);
+    void duringSimAction(CList& clone_list);
+    void beginAction(CList& clone_list);
+    bool readLine(vector<string>& parsed_line);
+    int getTypeIndex(){
+        return index;
+    }
+};
+
 class AllTypesWriter: public DuringOutputWriter{
 private:
     int sim_number;
@@ -122,6 +144,7 @@ public:
     IfType2Writer(string ofile);
     void finalAction(CList& clone_list);
     void beginAction(CList& clone_list){};
+    bool readLine(vector<string>& parsed_line){return true;}
 };
 
 class IsExtinctWriter: public FinalOutputWriter{
@@ -132,6 +155,7 @@ public:
     IsExtinctWriter(string ofile);
     void finalAction(CList& clone_list);
     void beginAction(CList& clone_list){};
+    bool readLine(vector<string>& parsed_line){return true;}
 };
 
 class EndTimeWriter: public FinalOutputWriter{
@@ -142,6 +166,7 @@ public:
     EndTimeWriter(string ofile);
     void finalAction(CList& clone_list);
     void beginAction(CList& clone_list){};
+    bool readLine(vector<string>& parsed_line){return true;}
 };
 
 

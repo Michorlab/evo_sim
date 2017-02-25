@@ -229,11 +229,36 @@ FitnessDistWriter::FitnessDistWriter(string ofile, int period, int i, int sim):D
     sim_number = sim;
 }
 
+MeanFitWriter::MeanFitWriter(string ofile, int period, int i, int sim):DuringOutputWriter(ofile, period){
+    ofile_name = "type_" + to_string(i) + ".oevo";
+    index = i;
+    sim_number = sim;
+}
+
 FitnessDistWriter::FitnessDistWriter(string ofile): DuringOutputWriter(ofile){
     sim_number = 1;
 }
 
+MeanFitWriter::MeanFitWriter(string ofile): DuringOutputWriter(ofile){
+    sim_number = 1;
+}
+
 bool FitnessDistWriter::readLine(vector<string>& parsed_line){
+    if (parsed_line.size() != 2){
+        return false;
+    }
+    try{
+        writing_period = stoi(parsed_line[0]);
+        index = stoi(parsed_line[1]);
+    }
+    catch (const invalid_argument){
+        return false;
+    }
+    ofile_name = "type_" + to_string(index) + ".oevo";
+    return true;
+}
+
+bool MeanFitWriter::readLine(vector<string>& parsed_line){
     if (parsed_line.size() != 2){
         return false;
     }
@@ -258,7 +283,21 @@ void FitnessDistWriter::beginAction(CList& clone_list){
     
 }
 
+void MeanFitWriter::beginAction(CList& clone_list){
+    string ofile_middle = "mean_fit_sim_"+to_string(sim_number);
+    outfile.open(ofile_loc + ofile_middle + ofile_name);
+    outfile << "data for cell type " << index << " sim number " << sim_number << endl;
+    outfile << clone_list.getCurrTime() << ", ";
+    outfile << (clone_list.getTypeByIndex(index)->getBirthRate())/clone_list.getTypeByIndex(index)->getNumCells() << endl;
+    
+}
+
 FitnessDistWriter::~FitnessDistWriter(){
+    outfile.flush();
+    outfile.close();
+}
+
+MeanFitWriter::~MeanFitWriter(){
     outfile.flush();
     outfile.close();
 }
@@ -280,6 +319,21 @@ void FitnessDistWriter::duringSimAction(CList& clone_list){
         write_dist(outfile, clone_list);
         outfile << endl;
     }
+}
+
+void MeanFitWriter::duringSimAction(CList& clone_list){
+    if (shouldWrite(clone_list) && clone_list.getTypeByIndex(index)->getNumCells() > 0){
+        outfile << clone_list.getCurrTime() << ", ";
+        outfile << (clone_list.getTypeByIndex(index)->getBirthRate())/clone_list.getTypeByIndex(index)->getNumCells() << endl;
+    }
+}
+
+void MeanFitWriter::finalAction(CList& clone_list){
+    outfile << clone_list.getCurrTime() << ", ";
+    outfile << (clone_list.getTypeByIndex(index)->getBirthRate())/clone_list.getTypeByIndex(index)->getNumCells() << endl;
+    outfile.flush();
+    outfile.close();
+    sim_number++;
 }
 
 void FitnessDistWriter::finalAction(CList& clone_list){

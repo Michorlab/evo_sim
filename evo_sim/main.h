@@ -9,10 +9,10 @@
 #include <cstdlib>
 #include <iomanip>
 #include <vector>
-#include "CList.h"
 
 using namespace std;
 
+class CList;
 class Clone;
 class MutationHandler;
 class OutputWriter;

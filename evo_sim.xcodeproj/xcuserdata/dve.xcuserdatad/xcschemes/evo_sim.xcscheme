@@ -63,7 +63,7 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "-i /Users/dve/Documents/rotations/michor/branching_mod/test1/input1.ievo"
+            argument = "-i /Users/dve/Documents/rotations/michor/branching_mod/test1/neutral.ievo"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
