@@ -62,7 +62,7 @@ TypeStructureWriter::~TypeStructureWriter(){
 
 void TypeStructureWriter::finalAction(CList& clone_list){
     std::vector<CellType *> roots = clone_list.getRootTypes();
-    for (int i=0; i<roots.size(); i++){
+    for (int i=0; i<int(roots.size()); i++){
         clone_list.walkTypesAndWrite(outfile, *roots[i]);
     }
     outfile.flush();
@@ -78,6 +78,32 @@ CellCountWriter::CellCountWriter(string ofile, int period, int i, int sim):Durin
 
 CellCountWriter::CellCountWriter(string ofile): DuringOutputWriter(ofile){
     sim_number = 1;
+    index = 0;
+}
+
+CountStepWriter::CountStepWriter(string ofile): DuringOutputWriter(ofile){
+    sim_number = 1;
+    index = 0;
+    timestep = 0;
+}
+
+bool CountStepWriter::readLine(vector<string>& parsed_line){
+    if (parsed_line.size() != 2){
+        return false;
+    }
+    try{
+        writing_period =stoi(parsed_line[0]);
+        index =stoi(parsed_line[1]);
+    }
+    catch (...){
+        return false;
+    }
+    ofile_name = "type_" + to_string(index) + ".oevo";
+    return true;
+}
+
+bool CountStepWriter::shouldWrite(CList &clone_list){
+    return (timestep%writing_period==0);
 }
 
 bool CellCountWriter::readLine(vector<string>& parsed_line){
@@ -85,10 +111,10 @@ bool CellCountWriter::readLine(vector<string>& parsed_line){
         return false;
     }
     try{
-        writing_period = stoi(parsed_line[0]);
-        index = stoi(parsed_line[1]);
+        writing_period =stoi(parsed_line[0]);
+        index =stoi(parsed_line[1]);
     }
-    catch (const invalid_argument){
+    catch (...){
         return false;
     }
     ofile_name = "type_" + to_string(index) + ".oevo";
@@ -102,9 +128,28 @@ void CellCountWriter::beginAction(CList& clone_list){
     outfile << clone_list.getCurrTime() << ", " << clone_list.getTypeByIndex(index)->getNumCells() << endl;
 }
 
+void CountStepWriter::beginAction(CList& clone_list){
+    string ofile_middle = "count_step_sim_"+to_string(sim_number);
+    outfile.open(ofile_loc + ofile_middle + ofile_name);
+    outfile << "data for cell type " << index << " sim number " << sim_number << endl;
+    outfile << timestep << ", " << clone_list.getTypeByIndex(index)->getNumCells() << endl;
+}
+
+CountStepWriter::~CountStepWriter(){
+    outfile.flush();
+    outfile.close();
+}
+
 CellCountWriter::~CellCountWriter(){
     outfile.flush();
     outfile.close();
+}
+
+void CountStepWriter::duringSimAction(CList& clone_list){
+    timestep ++;
+    if (shouldWrite(clone_list) && clone_list.getTypeByIndex(index)->getNumCells() > 0){
+        outfile << timestep << ", " << clone_list.getTypeByIndex(index)->getNumCells() << endl;
+    }
 }
 
 void CellCountWriter::duringSimAction(CList& clone_list){
@@ -115,6 +160,12 @@ void CellCountWriter::duringSimAction(CList& clone_list){
 
 void CellCountWriter::finalAction(CList& clone_list){
     outfile << clone_list.getCurrTime() << ", " << clone_list.getTypeByIndex(index)->getNumCells() << endl;
+    outfile.flush();
+    outfile.close();
+    sim_number++;
+}
+
+void CountStepWriter::finalAction(CList& clone_list){
     outfile.flush();
     outfile.close();
     sim_number++;
@@ -168,9 +219,9 @@ bool AllTypesWriter::readLine(vector<string>& parsed_line){
         return false;
     }
     try{
-        writing_period = stoi(parsed_line[0]);
+        writing_period =stoi(parsed_line[0]);
     }
-    catch (const invalid_argument){
+    catch (...){
         return false;
     }
     return true;
@@ -248,10 +299,10 @@ bool FitnessDistWriter::readLine(vector<string>& parsed_line){
         return false;
     }
     try{
-        writing_period = stoi(parsed_line[0]);
-        index = stoi(parsed_line[1]);
+        writing_period =stoi(parsed_line[0]);
+        index =stoi(parsed_line[1]);
     }
-    catch (const invalid_argument){
+    catch (...){
         return false;
     }
     ofile_name = "type_" + to_string(index) + ".oevo";
@@ -263,10 +314,10 @@ bool MeanFitWriter::readLine(vector<string>& parsed_line){
         return false;
     }
     try{
-        writing_period = stoi(parsed_line[0]);
-        index = stoi(parsed_line[1]);
+        writing_period =stoi(parsed_line[0]);
+        index =stoi(parsed_line[1]);
     }
-    catch (const invalid_argument){
+    catch (...){
         return false;
     }
     ofile_name = "type_" + to_string(index) + ".oevo";

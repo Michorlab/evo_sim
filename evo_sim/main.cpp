@@ -9,6 +9,7 @@
 #include <vector>
 #include <unistd.h>
 #include <sstream>
+#include <string>
 #include <algorithm>
 
 
@@ -20,7 +21,7 @@
 
 // initialize RNG
 int seed1 =  std::chrono::high_resolution_clock::now().time_since_epoch().count();
-mt19937 eng(seed1);
+std::mt19937 eng(seed1);
 
 int main(int argc, char *argv[]){
     string infilename;
@@ -164,7 +165,7 @@ MaxCellsListener::MaxCellsListener(){
 
 bool MaxCellsListener::readLine(vector<string>& parsed_line){
     try {
-        max_cells = stoi(parsed_line[0]);
+        max_cells =stoi(parsed_line[0]);
     }
     catch (...){
         return false;
@@ -174,7 +175,7 @@ bool MaxCellsListener::readLine(vector<string>& parsed_line){
 
 bool MaxTimeListener::readLine(vector<string>& parsed_line){
     try {
-        max_time = std::stod(parsed_line[0]);
+        max_time = stod(parsed_line[0]);
     }
     catch (...){
         return false;
@@ -192,8 +193,8 @@ bool MaxTimeListener::shouldEnd(CList& clone_list){
 
 bool HasTypeListener::readLine(vector<string>& parsed_line){
     try {
-        type = stoi(parsed_line[0]);
-        threshold = stod(parsed_line[1]);
+        type =stoi(parsed_line[0]);
+        threshold =stod(parsed_line[1]);
     }
     catch (...){
         return false;
@@ -405,6 +406,12 @@ bool SimParams::make_writer(vector<string> &parsed_line){
     else if (type == "MeanFit"){
         new_writer = new MeanFitWriter(*outfolder);
     }
+    else if (type == "EndTime"){
+        new_writer = new EndTimeWriter(*outfolder);
+    }
+    else if (type == "CountStep"){
+        new_writer = new CountStepWriter(*outfolder);
+    }
     else{
         err_type = "bad writer type";
         return false;
@@ -424,8 +431,8 @@ bool SimParams::make_clone(vector<string> &parsed_line){
     }
     string type = parsed_line[0];
     parsed_line.erase(parsed_line.begin());
-    int type_id = stoi(parsed_line[0]);
-    int num_cells = stoi(parsed_line[1]);
+    int type_id =stoi(parsed_line[0]);
+    int num_cells =stoi(parsed_line[1]);
     
     if (clone_list->getTypeByIndex(type_id)){
         err_type = "type space conflict";
@@ -494,7 +501,7 @@ bool SimParams::handle_sim_line(vector<string>& parsed_line){
         return false;
     }
     if (parsed_line[0] == "num_simulations"){
-        num_simulations = stoi(parsed_line[1]);
+        num_simulations =stoi(parsed_line[1]);
     }
     else if (parsed_line[0] == "mut_handler_type"){
         mut_type = parsed_line[1];

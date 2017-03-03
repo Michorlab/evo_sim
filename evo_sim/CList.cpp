@@ -163,21 +163,21 @@ void CList::removeCell(double b){
 void CList::walkTypesAndWrite(ofstream& outfile, CellType& root){
     outfile << root.getIndex() << "\t" << root.isExtinct() << "\t";
     std::vector<CellType *> children = root.getChildren();
-    for (int i=0; i<children.size(); i++){
+    for (int i=0; i<int(children.size()); i++){
         outfile << children[i]->getIndex() << "\t";
     }
     outfile << endl;
-    for (int i=0; i<children.size(); i++){
+    for (int i=0; i<int(children.size()); i++){
         walkTypesAndWrite(outfile, *children[i]);
     }
 }
 
 bool CList::handle_line(vector<string>& parsed_line){
     if (parsed_line[0] == "death"){
-        d = stod(parsed_line[1]);
+        d =stod(parsed_line[1]);
     }
     else if(parsed_line[0] == "max_types"){
-        max_types = stoi(parsed_line[1]) + 1;
+        max_types =stoi(parsed_line[1]) + 1;
         clearClones();
     }
     else{

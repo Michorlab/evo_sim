@@ -123,14 +123,18 @@ TypeSpecificClone::TypeSpecificClone(CellType& type, double mu, double sig, doub
 
 void Clone::addCells(int num_cells){
     cell_count+=num_cells;
-    cell_type->addCells(birth_rate, num_cells);
+    cell_type->addCells(num_cells, birth_rate);
 }
 
 double StochClone::drawLogNorm(double mean, double var){
     double loc = log(pow(mean, 2.0)/sqrt(var+pow(mean,2.0)));
-    double scale = log(1.0+var/pow(mean,2.0));
-    normal_distribution<double> norm(loc,scale);
-    return exp(norm(eng3));
+    double scale = sqrt(log(1.0+var/pow(mean,2.0)));
+    normal_distribution<double> norm(loc, scale);
+    double to_return = exp(norm(eng3));
+    if (to_return < 0){
+        return 0;
+    }
+    return to_return;
 }
 
 void TypeSpecificClone::reproduce(){
@@ -164,14 +168,11 @@ void HeritableClone::reproduce(){
 bool SimpleClone::readLine(vector<string>& parsed_line){
     //full line syntax: Clone SimpleClone [type_id] [num_cells] [birth_rate] [mut_rate]
     try{
-        cell_count = stoi(parsed_line[0]);
-        birth_rate = stod(parsed_line[1]);
-        mut_prob = stod(parsed_line[2]);
+        cell_count =stoi(parsed_line[0]);
+        birth_rate =stod(parsed_line[1]);
+        mut_prob =stod(parsed_line[2]);
     }
-    catch (const std::invalid_argument&){
-        return false;
-    }
-    catch (const std::out_of_range&){
+    catch (...){
         return false;
     }
     return checkRep();
@@ -181,14 +182,11 @@ bool TypeSpecificClone::readLine(vector<string>& parsed_line){
     //full line syntax: Clone TypeSpecificClone [type_id] [num_cells] [mean] [var] [mut_rate]
     cell_count = 1;
     try{
-        mean = stod(parsed_line[1]);
-        var = stod(parsed_line[2]);
-        mut_prob = stod(parsed_line[3]);
+        mean =stod(parsed_line[1]);
+        var =stod(parsed_line[2]);
+        mut_prob =stod(parsed_line[3]);
     }
-    catch (const std::invalid_argument&){
-        return false;
-    }
-    catch (const std::out_of_range&){
+    catch (...){
         return false;
     }
     birth_rate = drawLogNorm(mean, var);
@@ -199,14 +197,11 @@ bool HeritableClone::readLine(vector<string>& parsed_line){
     //full line syntax: Clone HeritableClone [type_id] [num_cells] [mean] [var] [mut_rate]
     cell_count = 1;
     try{
-        mean = stod(parsed_line[1]);
-        var = stod(parsed_line[2]);
-        mut_prob = stod(parsed_line[3]);
+        mean =stod(parsed_line[1]);
+        var =stod(parsed_line[2]);
+        mut_prob =stod(parsed_line[3]);
     }
-    catch (const std::invalid_argument&){
-        return false;
-    }
-    catch (const std::out_of_range&){
+    catch (...){
         return false;
     }
     birth_rate = drawLogNorm(mean, var);

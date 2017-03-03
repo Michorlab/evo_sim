@@ -56,6 +56,25 @@ public:
     virtual bool readLine(vector<string>& parsed_line) = 0;
 };
 
+class CountStepWriter: public DuringOutputWriter{
+private:
+    ofstream outfile;
+    int sim_number;
+    int timestep;
+    int index;
+    bool shouldWrite(CList& clone_list);
+public:
+    CountStepWriter(string ofile);
+    ~CountStepWriter();
+    bool readLine(vector<string>& parsed_line);
+    void finalAction(CList& clone_list);
+    void duringSimAction(CList& clone_list);
+    void beginAction(CList& clone_list);
+    int getTypeIndex(){
+        return index;
+    }
+};
+
 class TypeStructureWriter: public FinalOutputWriter{
 private:
     ofstream outfile;

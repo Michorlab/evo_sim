@@ -70,7 +70,7 @@ bool ThreeTypesMutation::read(std::vector<string>& params){
     bool isMu2 = false;
     bool isFit1 = false;
     bool isFit2 = false;
-    for (int i=0; i<params.size(); i++){
+    for (int i=0; i<int(params.size()); i++){
         string tok = params[i];
         stringstream ss;
         ss.str(tok);
@@ -80,15 +80,15 @@ bool ThreeTypesMutation::read(std::vector<string>& params){
         }
         if (pre=="mu2"){
             isMu2 = true;
-            mu2 = stod(post);
+            mu2 =stod(post);
         }
         else if (pre=="fit1"){
             isFit1 = true;
-            fit1 = stod(post);
+            fit1 =stod(post);
         }
         else if (pre=="fit2"){
             isFit2 = true;
-            fit2 = stod(post);
+            fit2 =stod(post);
         }
         else{
             return false;
