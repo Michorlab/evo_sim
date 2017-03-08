@@ -22,7 +22,7 @@ class CList {
     friend class CellType;
     /* represents a population of cells to be simulated. encodes the mechanism for advancing the simulation forward in time (the simulation structure, cell type hierarchy, and cells to be simulated).
      */
-private:
+protected:
     //these both will be NULL iff there are no cell types in the population.
     CellType *root;
     CellType *end_node;
@@ -75,7 +75,7 @@ public:
     
     /* advances the simulation by one event (birth or death). MODIFIES the CList and Clones inside.
      */
-    void advance();
+    virtual void advance();
     
     /* get the index of a new cell type that doesn't conflict with the current typespace.
      SHOULD NEVER be called when their are no free types left (max_types = num_types).
@@ -125,6 +125,12 @@ public:
     long long getNumCells(){return tot_cell_count;}
     
     bool isOneType();
+};
+
+class MoranPop: public CList{
+public:
+    MoranPop();
+    virtual void advance();
 };
 
 #endif /* clist_h */

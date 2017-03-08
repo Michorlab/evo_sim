@@ -181,6 +181,45 @@ AllTypesWriter::AllTypesWriter(string ofile): DuringOutputWriter(ofile){
     ofile_name = "all_types";
 }
 
+TunnelWriter::TunnelWriter(string ofile): DuringOutputWriter(ofile){
+    sim_number = 1;
+    writing_period = 0;
+    tunneled = false;
+}
+
+void TunnelWriter::beginAction(CList& clone_list){
+    tunneled = false;
+    outfile.open(ofile_loc + ofile_name);
+}
+
+void TunnelWriter::duringSimAction(CList& clone_list){
+    if (!clone_list.getTypeByIndex(index)){
+        return;
+    }
+    if (clone_list.getTypeByIndex(index)->getNumCells() == clone_list.getNumCells()){
+        tunneled = true;
+    }
+}
+
+void TunnelWriter::finalAction(CList& clone_list){
+    outfile << sim_number << ", " << tunneled << endl;
+    sim_number ++;
+}
+
+bool TunnelWriter::readLine(vector<string>& parsed_line){
+    if (parsed_line.size() != 1){
+        return false;
+    }
+    try{
+        index =stoi(parsed_line[0]);
+    }
+    catch (...){
+        return false;
+    }
+    ofile_name = "type_" + to_string(index) + "_tunnel.oevo";
+    return true;
+}
+
 void AllTypesWriter::beginAction(CList& clone_list){
     int type_index;
     vector<CellType *> root_types = clone_list.getRootTypes();
@@ -264,7 +303,7 @@ IfType2Writer::IfType2Writer(string ofile): FinalOutputWriter(ofile){
 
 void IfType2Writer::finalAction(CList& clone_list){
     bool is_2 = clone_list.getTypeByIndex(2);
-    is_2 = is_2 && (clone_list.getTypeByIndex(2)->getNumCells() > 0);
+    is_2 = is_2 && (clone_list.getTypeByIndex(2)->getNumCells() == clone_list.getNumCells());
     outfile << sim_number << ", " << is_2 << endl;
     sim_number++;
 }
@@ -328,9 +367,6 @@ void FitnessDistWriter::beginAction(CList& clone_list){
     string ofile_middle = "fit_sim_"+to_string(sim_number);
     outfile.open(ofile_loc + ofile_middle + ofile_name);
     outfile << "data for cell type " << index << " sim number " << sim_number << endl;
-    outfile << clone_list.getCurrTime();
-    write_dist(outfile, clone_list);
-    outfile << endl;
     
 }
 
@@ -338,9 +374,6 @@ void MeanFitWriter::beginAction(CList& clone_list){
     string ofile_middle = "mean_fit_sim_"+to_string(sim_number);
     outfile.open(ofile_loc + ofile_middle + ofile_name);
     outfile << "data for cell type " << index << " sim number " << sim_number << endl;
-    outfile << clone_list.getCurrTime() << ", ";
-    outfile << (clone_list.getTypeByIndex(index)->getBirthRate())/clone_list.getTypeByIndex(index)->getNumCells() << endl;
-    
 }
 
 FitnessDistWriter::~FitnessDistWriter(){
@@ -349,6 +382,11 @@ FitnessDistWriter::~FitnessDistWriter(){
 }
 
 MeanFitWriter::~MeanFitWriter(){
+    outfile.flush();
+    outfile.close();
+}
+
+TunnelWriter::~TunnelWriter(){
     outfile.flush();
     outfile.close();
 }
@@ -365,7 +403,7 @@ void FitnessDistWriter::write_dist(ofstream& outfile, CList& clone_list){
 }
 
 void FitnessDistWriter::duringSimAction(CList& clone_list){
-    if (shouldWrite(clone_list) && clone_list.getTypeByIndex(index)->getNumCells() > 0){
+    if (shouldWrite(clone_list) && clone_list.getTypeByIndex(index) && clone_list.getTypeByIndex(index)->getNumCells() > 0){
         outfile << clone_list.getCurrTime();
         write_dist(outfile, clone_list);
         outfile << endl;
@@ -373,7 +411,7 @@ void FitnessDistWriter::duringSimAction(CList& clone_list){
 }
 
 void MeanFitWriter::duringSimAction(CList& clone_list){
-    if (shouldWrite(clone_list) && clone_list.getTypeByIndex(index)->getNumCells() > 0){
+    if (shouldWrite(clone_list) && clone_list.getTypeByIndex(index) && clone_list.getTypeByIndex(index)->getNumCells() > 0){
         outfile << clone_list.getCurrTime() << ", ";
         outfile << (clone_list.getTypeByIndex(index)->getBirthRate())/clone_list.getTypeByIndex(index)->getNumCells() << endl;
     }
@@ -381,16 +419,12 @@ void MeanFitWriter::duringSimAction(CList& clone_list){
 
 void MeanFitWriter::finalAction(CList& clone_list){
     outfile << clone_list.getCurrTime() << ", ";
-    outfile << (clone_list.getTypeByIndex(index)->getBirthRate())/clone_list.getTypeByIndex(index)->getNumCells() << endl;
     outfile.flush();
     outfile.close();
     sim_number++;
 }
 
 void FitnessDistWriter::finalAction(CList& clone_list){
-    outfile << clone_list.getCurrTime();
-    write_dist(outfile, clone_list);
-    outfile << endl;
     outfile.flush();
     outfile.close();
     sim_number++;

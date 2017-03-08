@@ -1,5 +1,5 @@
 
-CC = g++ -std=c++11
+CC = g++ -std=c++11 -static-libstdc++
 DEBUG = -g
 CFLAGS = -Wall -c $(DEBUG)
 LFLAGS = -Wall $(DEBUG)

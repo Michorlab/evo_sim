@@ -118,7 +118,11 @@ Clone& CList::chooseReproducer(){
     uniform_real_distribution<double> runif;
     
     double ran = runif(eng2) * tot_rate;
-    Clone *reproducer = root->getRoot();
+    CellType *rep_type = root;
+    while (rep_type->getNumCells() == 0){
+        rep_type = rep_type->getNext();
+    }
+    Clone *reproducer = rep_type->getRoot();
     double curr_rate = reproducer->getTotalBirth();
     while (curr_rate < ran && reproducer->getNextClone()){
         reproducer = reproducer->getNextClone();
@@ -131,7 +135,11 @@ Clone& CList::chooseDead(){
     uniform_real_distribution<double> runif;
     
     double ran = runif(eng2) * tot_cell_count;
-    Clone *dead = root->getRoot();
+    CellType *dead_type = root;
+    while (dead_type->getNumCells() == 0){
+        dead_type = dead_type->getNext();
+    }
+    Clone *dead = dead_type->getRoot();
     double curr_rate = dead->getCellCount();
     while (curr_rate < ran && dead->getNextClone()){
         dead = dead->getNextClone();
@@ -198,3 +206,18 @@ bool CList::isOneType(){
 int CList::newestType(){
     return end_node->getIndex();
 }
+
+void MoranPop::advance(){
+    Clone& dead = chooseDead();
+    if (dead.isSingleCell()){
+        delete &dead;
+    }
+    else{
+        dead.removeOneCell();
+    }
+    Clone& mother = chooseReproducer();
+    mother.reproduce();
+    time++;
+}
+
+MoranPop::MoranPop() : CList(){}

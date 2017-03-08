@@ -114,10 +114,24 @@ HeritableClone::HeritableClone(CellType& type, double mu, double sig, double mut
     cell_count = 1;
 }
 
+HeritableClone::HeritableClone(CellType& type, double mu, double sig, double mut, double offset) : StochClone(type, mut){
+    mean = mu;
+    var = sig;
+    birth_rate = offset + mean;
+    cell_count = 1;
+}
+
 TypeSpecificClone::TypeSpecificClone(CellType& type, double mu, double sig, double mut) : StochClone(type, mut){
     mean = mu;
     var = sig;
     birth_rate = drawLogNorm(mean, var);
+    cell_count = 1;
+}
+
+TypeSpecificClone::TypeSpecificClone(CellType& type, double mu, double sig, double mut, double offset) : StochClone(type, mut){
+    mean = mu;
+    var = sig;
+    birth_rate = offset + mean;
     cell_count = 1;
 }
 
@@ -142,11 +156,14 @@ void TypeSpecificClone::reproduce(){
     if (runif(eng3) < mut_prob){
         MutationHandler& mut_handle = cell_type->getMutHandler();
         mut_handle.generateMutant(*cell_type, mean, mut_prob);
-        TypeSpecificClone *new_node = new TypeSpecificClone(mut_handle.getNewType(), mut_handle.getNewBirthRate(), var, mut_handle.getNewMutProb());
+        birth_rate = drawLogNorm(mean, var);
+        double offset = birth_rate - mean;
+        TypeSpecificClone *new_node = new TypeSpecificClone(mut_handle.getNewType(), mut_handle.getNewBirthRate(), var, mut_handle.getNewMutProb(), offset);
         mut_handle.getNewType().insertClone(*new_node);
     }
     else{
         TypeSpecificClone *new_node = new TypeSpecificClone(*cell_type, mean, var, mut_prob);
+        birth_rate = new_node->getBirthRate();
         cell_type->insertClone(*new_node);
     }
 }
@@ -156,11 +173,14 @@ void HeritableClone::reproduce(){
     if (runif(eng3) < mut_prob){
         MutationHandler& mut_handle = cell_type->getMutHandler();
         mut_handle.generateMutant(*cell_type, birth_rate, mut_prob);
-        HeritableClone *new_node = new HeritableClone(mut_handle.getNewType(), mut_handle.getNewBirthRate(), var, mut_handle.getNewMutProb());
+        birth_rate = drawLogNorm(mean, var);
+        double offset = birth_rate - mean;
+        HeritableClone *new_node = new HeritableClone(mut_handle.getNewType(), mut_handle.getNewBirthRate(), var, mut_handle.getNewMutProb(), offset);
         mut_handle.getNewType().insertClone(*new_node);
     }
     else{
         HeritableClone *new_node = new HeritableClone(*cell_type, birth_rate, var, mut_prob);
+        birth_rate = new_node->getBirthRate();
         cell_type->insertClone(*new_node);
     }
 }

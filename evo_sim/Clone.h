@@ -109,6 +109,7 @@ private:
     double var;
 public:
     TypeSpecificClone(CellType& type, double mu, double sig, double mut);
+    TypeSpecificClone(CellType& type, double mu, double sig, double mut, double offset);
     TypeSpecificClone(CellType& type);
     void reproduce();
     bool readLine(vector<string>& parsed_line);
@@ -120,6 +121,7 @@ private:
     double var;
 public:
     HeritableClone(CellType& type, double mu, double sig, double mut);
+    HeritableClone(CellType& type, double mu, double sig, double mut, double offset);
     HeritableClone(CellType& type);
     void reproduce();
     bool readLine(vector<string>& parsed_line);

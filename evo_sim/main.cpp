@@ -26,15 +26,19 @@ std::mt19937 eng(seed1);
 int main(int argc, char *argv[]){
     string infilename;
     string outfolder;
+    string model_type;
     char tmp;
     
-    while((tmp=getopt(argc,argv,"i:o:"))!=-1){
+    while((tmp=getopt(argc,argv,"i:o:m:"))!=-1){
         switch(tmp){
                 case 'i':
                 infilename = optarg;
                 break;
                 case 'o':
                 outfolder = optarg;
+                break;
+                case 'm':
+                model_type = optarg;
                 break;
         }
     }
@@ -54,10 +58,19 @@ int main(int argc, char *argv[]){
         cout << infilename << endl;
         return 1;
     }
-    
-    CList clone_list = CList();
+    CList* clone_list;
+    if (model_type == "moran"){
+        clone_list = new MoranPop();
+    }
+    else if (model_type == "branching"){
+        clone_list = new CList();
+    }
+    else{
+        cout << "bad simulation type" << endl;
+        return 1;
+    }
     CompositeListener end_conditions = CompositeListener();
-    SimParams params(clone_list, writers, end_conditions, outfolder);
+    SimParams params(*clone_list, writers, end_conditions, outfolder);
     if (!params.read(infile)){
         params.writeErrors(errfile);
         cout << "bad input file: check error file." << endl;
@@ -70,21 +83,22 @@ int main(int argc, char *argv[]){
     
     for (int i=0; i<params.getNumSims(); i++){
         for (vector<OutputWriter *>::iterator it = writers.begin(); it != writers.end(); ++it){
-            (*it)->beginAction(clone_list);
+            (*it)->beginAction(*clone_list);
         }
-        while (!clone_list.noTypesLeft() && !clone_list.isExtinct() && !end_conditions.shouldEnd(clone_list)){
-            clone_list.advance();
+        while (!clone_list->noTypesLeft() && !clone_list->isExtinct() && !end_conditions.shouldEnd(*clone_list)){
+            clone_list->advance();
             for (vector<OutputWriter *>::iterator it = writers.begin(); it != writers.end(); ++it){
-                (*it)->duringSimAction(clone_list);
+                (*it)->duringSimAction(*clone_list);
             }
         }
         for (vector<OutputWriter *>::iterator it = writers.begin(); it != writers.end(); ++it){
-            (*it)->finalAction(clone_list);
+            (*it)->finalAction(*clone_list);
         }
         infile.open(infilename);
         params.refreshSim(infile);
         infile.close();
     }
+    delete clone_list;
     writers.clear();
     return 0;
 }
@@ -105,9 +119,11 @@ CellType::CellType(int i, CellType *parent_type){
 void CellType::subtractOneCell(double b){
     num_cells --;
     total_birth_rate-=b;
+    /*
     if (isExtinct()){
         unlinkType();
     }
+     */
     clone_list->removeCell(b);
 }
 
@@ -412,6 +428,9 @@ bool SimParams::make_writer(vector<string> &parsed_line){
     else if (type == "CountStep"){
         new_writer = new CountStepWriter(*outfolder);
     }
+    else if (type == "Tunnel"){
+        new_writer = new TunnelWriter(*outfolder);
+    }
     else{
         err_type = "bad writer type";
         return false;
@@ -519,6 +538,9 @@ bool SimParams::handle_sim_line(vector<string>& parsed_line){
 bool SimParams::make_mut_handler(){
     if (mut_type == "ThreeTypes"){
         mut_handler = new ThreeTypesMutation();
+    }
+    else if (mut_type == "ThreeTypesMult"){
+        mut_handler = new ThreeTypesMultMutation();
     }
     else if (mut_type == "Neutral"){
         mut_handler = new NeutralMutation();

@@ -63,11 +63,15 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "-i /Users/dve/Documents/rotations/michor/branching_mod/neutral_simple/neutral_simple.ievo"
+            argument = "-i /Users/dve/Documents/rotations/michor/branching_mod/moran_test/moran_test.ievo"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-o /Users/dve/Documents/rotations/michor/branching_mod/test1/"
+            argument = "-o /Users/dve/Documents/rotations/michor/branching_mod/moran_test/"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-m moran"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>

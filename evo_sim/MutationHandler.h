@@ -61,15 +61,21 @@ class ThreeTypesMutation: public MutationHandler {
      conceptually similar to 2-hit TS model
      type 2 absorbing state
      */
-private:
+protected:
     double mu2;
     double fit1;
     double fit2;
 public:
     ThreeTypesMutation(){};
     ThreeTypesMutation(double m2, double f1, double f2);
-    void generateMutant(CellType& type, double b, double mut);
+    virtual void generateMutant(CellType& type, double b, double mut);
     bool read(std::vector<string>& params);
+};
+
+class ThreeTypesMultMutation: public ThreeTypesMutation{
+public:
+    ThreeTypesMultMutation(){};
+    virtual void generateMutant(CellType& type, double b, double mut);
 };
 
 class NeutralMutation: public MutationHandler{

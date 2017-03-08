@@ -141,6 +141,24 @@ public:
     }
 };
 
+class TunnelWriter: public DuringOutputWriter{
+private:
+    int index;
+    int sim_number;
+    bool tunneled;
+    ofstream outfile;
+public:
+    ~TunnelWriter();
+    TunnelWriter(string ofile);
+    void finalAction(CList& clone_list);
+    void duringSimAction(CList& clone_list);
+    void beginAction(CList& clone_list);
+    bool readLine(vector<string>& parsed_line);
+    int getTypeIndex(){
+        return index;
+    }
+};
+
 class AllTypesWriter: public DuringOutputWriter{
 private:
     int sim_number;

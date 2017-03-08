@@ -52,6 +52,22 @@ void ThreeTypesMutation::generateMutant(CellType& type, double b, double mut){
     }
 }
 
+void ThreeTypesMultMutation::generateMutant(CellType& type, double b, double mut){
+    if (!(type.getIndex() <= 1)){
+        throw "bad three types mutating cell type";
+    }
+    if (type.getIndex() == 1){
+        birth_rate = b*fit2/fit1;
+        mut_prob = 0;
+        new_type = getNewTypeByIndex(2, type);
+    }
+    else if (type.getIndex() == 0){
+        birth_rate = b*fit1;
+        mut_prob = mu2;
+        new_type = getNewTypeByIndex(1, type);
+    }
+}
+
 void NeutralMutation::generateMutant(CellType& type, double b, double mut){
     if (type.getPopulation().noTypesLeft()){
         throw "tried to get new type when no types left";
