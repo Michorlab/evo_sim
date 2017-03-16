@@ -184,26 +184,27 @@ AllTypesWriter::AllTypesWriter(string ofile): DuringOutputWriter(ofile){
 TunnelWriter::TunnelWriter(string ofile): DuringOutputWriter(ofile){
     sim_number = 1;
     writing_period = 0;
-    tunneled = false;
+    tunneled = true;
 }
 
-void TunnelWriter::beginAction(CList& clone_list){
-    tunneled = false;
-    outfile.open(ofile_loc + ofile_name);
-}
+void TunnelWriter::beginAction(CList& clone_list){}
 
 void TunnelWriter::duringSimAction(CList& clone_list){
     if (!clone_list.getTypeByIndex(index)){
         return;
     }
     if (clone_list.getTypeByIndex(index)->getNumCells() == clone_list.getNumCells()){
-        tunneled = true;
+        tunneled = false;
     }
 }
 
 void TunnelWriter::finalAction(CList& clone_list){
+    bool is_2 = clone_list.getTypeByIndex(2);
+    is_2 = is_2 && (clone_list.getTypeByIndex(2)->getNumCells() == clone_list.getNumCells());
+    tunneled = is_2 && tunneled;
     outfile << sim_number << ", " << tunneled << endl;
     sim_number ++;
+    tunneled = true;
 }
 
 bool TunnelWriter::readLine(vector<string>& parsed_line){
@@ -217,6 +218,7 @@ bool TunnelWriter::readLine(vector<string>& parsed_line){
         return false;
     }
     ofile_name = "type_" + to_string(index) + "_tunnel.oevo";
+    outfile.open(ofile_loc + ofile_name);
     return true;
 }
 

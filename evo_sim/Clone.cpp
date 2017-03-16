@@ -20,13 +20,8 @@ int seed3 =  std::chrono::high_resolution_clock::now().time_since_epoch().count(
 mt19937 eng3(seed3);
 
 void Clone::removeOneCell(){
-    if (cell_count <= 1){
-        throw "death error";
-    }
-    else{
-        cell_count--;
-        cell_type->subtractOneCell(birth_rate);
-    }
+    cell_count--;
+    cell_type->subtractOneCell(birth_rate);
 }
 
 Clone::~Clone(){
@@ -154,17 +149,21 @@ double StochClone::drawLogNorm(double mean, double var){
 void TypeSpecificClone::reproduce(){
     uniform_real_distribution<double> runif;
     if (runif(eng3) < mut_prob){
+        removeOneCell();
         MutationHandler& mut_handle = cell_type->getMutHandler();
         mut_handle.generateMutant(*cell_type, mean, mut_prob);
         birth_rate = drawLogNorm(mean, var);
         double offset = birth_rate - mean;
         TypeSpecificClone *new_node = new TypeSpecificClone(mut_handle.getNewType(), mut_handle.getNewBirthRate(), var, mut_handle.getNewMutProb(), offset);
         mut_handle.getNewType().insertClone(*new_node);
+        addCells(1);
     }
     else{
         TypeSpecificClone *new_node = new TypeSpecificClone(*cell_type, mean, var, mut_prob);
+        removeOneCell();
         birth_rate = new_node->getBirthRate();
         cell_type->insertClone(*new_node);
+        addCells(1);
     }
 }
 
@@ -173,14 +172,18 @@ void HeritableClone::reproduce(){
     if (runif(eng3) < mut_prob){
         MutationHandler& mut_handle = cell_type->getMutHandler();
         mut_handle.generateMutant(*cell_type, birth_rate, mut_prob);
+        removeOneCell();
         birth_rate = drawLogNorm(mean, var);
         double offset = birth_rate - mean;
         HeritableClone *new_node = new HeritableClone(mut_handle.getNewType(), mut_handle.getNewBirthRate(), var, mut_handle.getNewMutProb(), offset);
         mut_handle.getNewType().insertClone(*new_node);
+        addCells(1);
     }
     else{
+        removeOneCell();
         HeritableClone *new_node = new HeritableClone(*cell_type, birth_rate, var, mut_prob);
         birth_rate = new_node->getBirthRate();
+        addCells(1);
         cell_type->insertClone(*new_node);
     }
 }

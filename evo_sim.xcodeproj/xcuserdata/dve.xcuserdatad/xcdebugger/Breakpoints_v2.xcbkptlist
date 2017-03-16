@@ -218,11 +218,11 @@
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "evo_sim/Clone.cpp"
-            timestampString = "510623032.767978"
+            timestampString = "510681860.236068"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "139"
-            endingLineNumber = "139"
+            startingLineNumber = "134"
+            endingLineNumber = "134"
             landmarkName = "Clone::addCells(int num_cells)"
             landmarkType = "7">
          </BreakpointContent>
@@ -266,11 +266,11 @@
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "evo_sim/OutputWriter.cpp"
-            timestampString = "510636030.748723"
+            timestampString = "510674927.758757"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "414"
-            endingLineNumber = "414"
+            startingLineNumber = "416"
+            endingLineNumber = "416"
             landmarkName = "MeanFitWriter::duringSimAction(CList&amp; clone_list)"
             landmarkType = "7">
          </BreakpointContent>
@@ -282,11 +282,11 @@
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "evo_sim/OutputWriter.cpp"
-            timestampString = "510636030.748723"
+            timestampString = "510674927.758757"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "415"
-            endingLineNumber = "415"
+            startingLineNumber = "417"
+            endingLineNumber = "417"
             landmarkName = "MeanFitWriter::duringSimAction(CList&amp; clone_list)"
             landmarkType = "7">
          </BreakpointContent>
@@ -298,11 +298,11 @@
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "evo_sim/Clone.cpp"
-            timestampString = "510623772.34642"
+            timestampString = "510681860.236068"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "119"
-            endingLineNumber = "119"
+            startingLineNumber = "114"
+            endingLineNumber = "114"
             landmarkName = "HeritableClone::HeritableClone(CellType&amp; type, double mu, double sig, double mut, double offset)"
             landmarkType = "7">
          </BreakpointContent>
@@ -314,11 +314,11 @@
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "evo_sim/Clone.cpp"
-            timestampString = "510624606.21429"
+            timestampString = "510681860.236068"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "182"
-            endingLineNumber = "182"
+            startingLineNumber = "184"
+            endingLineNumber = "184"
             landmarkName = "HeritableClone::reproduce()"
             landmarkType = "7">
          </BreakpointContent>
@@ -368,6 +368,22 @@
             startingLineNumber = "33"
             endingLineNumber = "33"
             landmarkName = "MutationHandler::getNewTypeByIndex(int index, CellType&amp; curr_type)"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "evo_sim/Clone.cpp"
+            timestampString = "510681860.236068"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "164"
+            endingLineNumber = "164"
+            landmarkName = "TypeSpecificClone::reproduce()"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>

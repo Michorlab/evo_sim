@@ -28,8 +28,9 @@ int main(int argc, char *argv[]){
     string outfolder;
     string model_type;
     char tmp;
+    int num_cores = 1;
     
-    while((tmp=getopt(argc,argv,"i:o:m:"))!=-1){
+    while((tmp=getopt(argc,argv,"i:o:m:n:"))!=-1){
         switch(tmp){
                 case 'i':
                 infilename = optarg;
@@ -39,6 +40,9 @@ int main(int argc, char *argv[]){
                 break;
                 case 'm':
                 model_type = optarg;
+                break;
+                case 'n':
+                num_cores = stoi(optarg);
                 break;
         }
     }
