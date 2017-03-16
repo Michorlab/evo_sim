@@ -61,6 +61,7 @@ void CList::refreshSim(){
     num_types = 0;
     root = NULL;
     end_node = NULL;
+    root_types.clear();
 }
 
 void CList::insertCellType(CellType& new_type) {

@@ -17,6 +17,18 @@ class Clone;
 class MutationHandler;
 class OutputWriter;
 
+class ThreadInput{
+private:
+    int sim_number;
+    pthread_mutex_t *lock;
+public:
+    string outfolder;
+    string infilename;
+    string model_type;
+    ThreadInput(pthread_mutex_t *new_lock);
+    int getSimNumberAndAdvance();
+};
+
 class CellType{
     /* represents a functional subset of cells in the population (e.g. cells with a specific mutation, phenotype, etc)
      distinct from fitness- cells with different birth rates can have the same type

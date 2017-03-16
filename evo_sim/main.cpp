@@ -11,6 +11,7 @@
 #include <sstream>
 #include <string>
 #include <algorithm>
+#include <pthread.h>
 
 
 #include "main.h"
@@ -23,12 +24,84 @@
 int seed1 =  std::chrono::high_resolution_clock::now().time_since_epoch().count();
 std::mt19937 eng(seed1);
 
+// shared simulation conditions: should ONLY be modified in thread safe manner.
+
+
+void *sim_thread(void *arg){
+    ThreadInput *data = (ThreadInput *)arg;
+    string outfolder = data->outfolder;
+    string infilename = data->infilename;
+    string model_type = data->model_type;
+    
+    ofstream errfile;
+    errfile.open(outfolder+"input_err.eevo");
+    vector<OutputWriter*> writers;
+    ifstream infile;
+    infile.open(infilename);
+    if (!infile.is_open()){
+        cout << "bad input file location" << endl;
+        cout << infilename << endl;
+        pthread_exit(NULL);
+    }
+    CList* clone_list;
+    if (model_type == "moran"){
+        clone_list = new MoranPop();
+    }
+    else if (model_type == "branching"){
+        clone_list = new CList();
+    }
+    else{
+        cout << "bad simulation type" << endl;
+        pthread_exit(NULL);
+    }
+    CompositeListener end_conditions;
+    SimParams params(*clone_list, writers, end_conditions, outfolder);
+    if (!params.read(infile)){
+        params.writeErrors(errfile);
+        cout << "bad input file: check error file." << endl;
+        infile.close();
+        errfile.close();
+        pthread_exit(NULL);
+    }
+    infile.close();
+    errfile.close();
+    
+    int sim_num = data->getSimNumberAndAdvance();
+    
+    while (sim_num <= params.getNumSims()){
+        for (vector<OutputWriter *>::iterator it = writers.begin(); it != writers.end(); ++it){
+            (*it)->setSimNumber(sim_num);
+            (*it)->beginAction(*clone_list);
+        }
+        while (!clone_list->noTypesLeft() && !clone_list->isExtinct() && !end_conditions.shouldEnd(*clone_list)){
+            clone_list->advance();
+            for (vector<OutputWriter *>::iterator it = writers.begin(); it != writers.end(); ++it){
+                (*it)->duringSimAction(*clone_list);
+            }
+        }
+        for (vector<OutputWriter *>::iterator it = writers.begin(); it != writers.end(); ++it){
+            (*it)->finalAction(*clone_list);
+        }
+        
+        infile.open(infilename);
+        params.refreshSim(infile);
+        infile.close();
+        
+        sim_num = data->getSimNumberAndAdvance();
+    }
+    
+    delete clone_list;
+    writers.clear();
+    pthread_exit(NULL);
+}
+
 int main(int argc, char *argv[]){
     string infilename;
     string outfolder;
     string model_type;
     char tmp;
     int num_cores = 1;
+    pthread_mutex_t lock_sim_number;
     
     while((tmp=getopt(argc,argv,"i:o:m:n:"))!=-1){
         switch(tmp){
@@ -51,63 +124,41 @@ int main(int argc, char *argv[]){
         cout << "argument issues" << endl;
         return 1;
     }
+    pthread_t threads[num_cores];
+    int rc=0;
+    pthread_mutex_init(&lock_sim_number, NULL);
+    ThreadInput thread_data(&lock_sim_number);
+    thread_data.model_type = model_type;
+    thread_data.infilename = infilename;
+    thread_data.outfolder = outfolder;
     
-    ofstream errfile;
-    errfile.open(outfolder+"input_err.eevo");
-    vector<OutputWriter*> writers;
-    ifstream infile;
-    infile.open(infilename);
-    if (!infile.is_open()){
-        cout << "bad input file location" << endl;
-        cout << infilename << endl;
-        return 1;
-    }
-    CList* clone_list;
-    if (model_type == "moran"){
-        clone_list = new MoranPop();
-    }
-    else if (model_type == "branching"){
-        clone_list = new CList();
-    }
-    else{
-        cout << "bad simulation type" << endl;
-        return 1;
-    }
-    CompositeListener end_conditions = CompositeListener();
-    SimParams params(*clone_list, writers, end_conditions, outfolder);
-    if (!params.read(infile)){
-        params.writeErrors(errfile);
-        cout << "bad input file: check error file." << endl;
-        infile.close();
-        errfile.close();
-        return 1;
-    }
-    infile.close();
-    errfile.close();
-    
-    for (int i=0; i<params.getNumSims(); i++){
-        for (vector<OutputWriter *>::iterator it = writers.begin(); it != writers.end(); ++it){
-            (*it)->beginAction(*clone_list);
+    for (int i=0; i<num_cores; i++){
+        
+        if (rc != pthread_create(&threads[i], NULL, sim_thread, &thread_data)){
+            cout << "thread creation failure" << endl;
+            return 1;
         }
-        while (!clone_list->noTypesLeft() && !clone_list->isExtinct() && !end_conditions.shouldEnd(*clone_list)){
-            clone_list->advance();
-            for (vector<OutputWriter *>::iterator it = writers.begin(); it != writers.end(); ++it){
-                (*it)->duringSimAction(*clone_list);
-            }
-        }
-        for (vector<OutputWriter *>::iterator it = writers.begin(); it != writers.end(); ++it){
-            (*it)->finalAction(*clone_list);
-        }
-        infile.open(infilename);
-        params.refreshSim(infile);
-        infile.close();
     }
-    delete clone_list;
-    writers.clear();
+    for (int i = 0; i < num_cores; ++i) {
+        pthread_join(threads[i], NULL);
+    }
     return 0;
 }
 
 //=============CLASS METHODS==================
+
+ThreadInput::ThreadInput(pthread_mutex_t* new_lock){
+    sim_number = 1;
+    lock = new_lock;
+}
+
+int ThreadInput::getSimNumberAndAdvance(){
+    pthread_mutex_lock(lock);
+    int sim_num = sim_number;
+    sim_number++;
+    pthread_mutex_unlock(lock);
+    return sim_num;
+}
 
 CellType::CellType(int i, CellType *parent_type){
     index = i;

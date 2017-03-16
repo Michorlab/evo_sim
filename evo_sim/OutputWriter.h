@@ -24,16 +24,19 @@ class OutputWriter{
 protected:
     string ofile_loc;
     string ofile_name;
+    int sim_number;
 public:
     virtual void finalAction(CList& clone_list) = 0;
     virtual void duringSimAction(CList& clone_list) = 0;
     virtual void beginAction(CList& clone_list) = 0;
     virtual bool readLine(vector<string>& parsed_line) = 0;
+    void setSimNumber(int new_num){
+        sim_number = new_num;
+    }
+    OutputWriter();
 };
 
 class FinalOutputWriter: public OutputWriter{
-protected:
-    int sim_number;
 public:
     FinalOutputWriter(string ofile);
     virtual void finalAction(CList& clone_list) = 0;
@@ -59,7 +62,6 @@ public:
 class CountStepWriter: public DuringOutputWriter{
 private:
     ofstream outfile;
-    int sim_number;
     int timestep;
     int index;
     bool shouldWrite(CList& clone_list);
@@ -89,7 +91,6 @@ public:
 class CellCountWriter: public DuringOutputWriter{
 private:
     int index;
-    int sim_number;
     ofstream outfile;
 public:
     ~CellCountWriter();
@@ -107,7 +108,6 @@ public:
 class FitnessDistWriter: public DuringOutputWriter{
 private:
     int index;
-    int sim_number;
     ofstream outfile;
     void write_dist(ofstream& outfile, CList& clone_list);
 public:
@@ -126,7 +126,6 @@ public:
 class MeanFitWriter: public DuringOutputWriter{
 private:
     int index;
-    int sim_number;
     ofstream outfile;
 public:
     ~MeanFitWriter();
@@ -144,7 +143,6 @@ public:
 class TunnelWriter: public DuringOutputWriter{
 private:
     int index;
-    int sim_number;
     bool tunneled;
     ofstream outfile;
 public:
@@ -161,7 +159,6 @@ public:
 
 class AllTypesWriter: public DuringOutputWriter{
 private:
-    int sim_number;
     vector<CellCountWriter *> writers;
 public:
     ~AllTypesWriter();

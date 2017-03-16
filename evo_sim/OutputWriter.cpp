@@ -17,9 +17,12 @@
 
 using namespace std;
 
+OutputWriter::OutputWriter(){
+    sim_number = 1;
+}
+
 FinalOutputWriter::FinalOutputWriter(string ofile){
     ofile_loc = ofile;
-    sim_number = 1;
 }
 
 DuringOutputWriter::DuringOutputWriter(string ofile, int period){
@@ -52,7 +55,7 @@ TypeStructureWriter::TypeStructureWriter(string ofile):FinalOutputWriter(ofile){
 
 void TypeStructureWriter::beginAction(CList &clone_list){
     string ofile_middle = "sim_"+to_string(sim_number);
-    outfile.open(ofile_loc + ofile_middle + ofile_name);
+    outfile.open(ofile_loc + ofile_middle + ofile_name, ios::app);
 }
 
 TypeStructureWriter::~TypeStructureWriter(){
@@ -77,12 +80,10 @@ CellCountWriter::CellCountWriter(string ofile, int period, int i, int sim):Durin
 }
 
 CellCountWriter::CellCountWriter(string ofile): DuringOutputWriter(ofile){
-    sim_number = 1;
     index = 0;
 }
 
 CountStepWriter::CountStepWriter(string ofile): DuringOutputWriter(ofile){
-    sim_number = 1;
     index = 0;
     timestep = 0;
 }
@@ -123,14 +124,14 @@ bool CellCountWriter::readLine(vector<string>& parsed_line){
 
 void CellCountWriter::beginAction(CList& clone_list){
     string ofile_middle = "count_sim_"+to_string(sim_number);
-    outfile.open(ofile_loc + ofile_middle + ofile_name);
+    outfile.open(ofile_loc + ofile_middle + ofile_name, ios::app);
     outfile << "data for cell type " << index << " sim number " << sim_number << endl;
     outfile << clone_list.getCurrTime() << ", " << clone_list.getTypeByIndex(index)->getNumCells() << endl;
 }
 
 void CountStepWriter::beginAction(CList& clone_list){
     string ofile_middle = "count_step_sim_"+to_string(sim_number);
-    outfile.open(ofile_loc + ofile_middle + ofile_name);
+    outfile.open(ofile_loc + ofile_middle + ofile_name, ios::app);
     outfile << "data for cell type " << index << " sim number " << sim_number << endl;
     outfile << timestep << ", " << clone_list.getTypeByIndex(index)->getNumCells() << endl;
 }
@@ -172,17 +173,14 @@ void CountStepWriter::finalAction(CList& clone_list){
 }
 
 AllTypesWriter::AllTypesWriter(string ofile, int period): DuringOutputWriter(ofile, period){
-    sim_number = 1;
     ofile_name = "all_types";
 }
 
 AllTypesWriter::AllTypesWriter(string ofile): DuringOutputWriter(ofile){
-    sim_number = 1;
     ofile_name = "all_types";
 }
 
 TunnelWriter::TunnelWriter(string ofile): DuringOutputWriter(ofile){
-    sim_number = 1;
     writing_period = 0;
     tunneled = true;
 }
@@ -218,7 +216,7 @@ bool TunnelWriter::readLine(vector<string>& parsed_line){
         return false;
     }
     ofile_name = "type_" + to_string(index) + "_tunnel.oevo";
-    outfile.open(ofile_loc + ofile_name);
+    outfile.open(ofile_loc + ofile_name, ios::app);
     return true;
 }
 
@@ -270,7 +268,7 @@ bool AllTypesWriter::readLine(vector<string>& parsed_line){
 
 IsExtinctWriter::IsExtinctWriter(string ofile): FinalOutputWriter(ofile){
     ofile_name = "extinction.oevo";
-    outfile.open(ofile_loc+ofile_name);
+    outfile.open(ofile_loc+ofile_name, ios::app);
 }
 
 void IsExtinctWriter::finalAction(CList& clone_list){
@@ -285,7 +283,7 @@ IsExtinctWriter::~IsExtinctWriter(){
 
 EndTimeWriter::EndTimeWriter(string ofile): FinalOutputWriter(ofile){
     ofile_name = "end_time.oevo";
-    outfile.open(ofile_loc+ofile_name);
+    outfile.open(ofile_loc+ofile_name, ios::app);
 }
 
 void EndTimeWriter::finalAction(CList& clone_list){
@@ -300,7 +298,7 @@ EndTimeWriter::~EndTimeWriter(){
 
 IfType2Writer::IfType2Writer(string ofile): FinalOutputWriter(ofile){
     ofile_name = "iftype2.oevo";
-    outfile.open(ofile_loc+ofile_name);
+    outfile.open(ofile_loc+ofile_name, ios::app);
 }
 
 void IfType2Writer::finalAction(CList& clone_list){
@@ -327,13 +325,9 @@ MeanFitWriter::MeanFitWriter(string ofile, int period, int i, int sim):DuringOut
     sim_number = sim;
 }
 
-FitnessDistWriter::FitnessDistWriter(string ofile): DuringOutputWriter(ofile){
-    sim_number = 1;
-}
+FitnessDistWriter::FitnessDistWriter(string ofile): DuringOutputWriter(ofile){}
 
-MeanFitWriter::MeanFitWriter(string ofile): DuringOutputWriter(ofile){
-    sim_number = 1;
-}
+MeanFitWriter::MeanFitWriter(string ofile): DuringOutputWriter(ofile){}
 
 bool FitnessDistWriter::readLine(vector<string>& parsed_line){
     if (parsed_line.size() != 2){
@@ -367,14 +361,14 @@ bool MeanFitWriter::readLine(vector<string>& parsed_line){
 
 void FitnessDistWriter::beginAction(CList& clone_list){
     string ofile_middle = "fit_sim_"+to_string(sim_number);
-    outfile.open(ofile_loc + ofile_middle + ofile_name);
+    outfile.open(ofile_loc + ofile_middle + ofile_name, ios::app);
     outfile << "data for cell type " << index << " sim number " << sim_number << endl;
     
 }
 
 void MeanFitWriter::beginAction(CList& clone_list){
     string ofile_middle = "mean_fit_sim_"+to_string(sim_number);
-    outfile.open(ofile_loc + ofile_middle + ofile_name);
+    outfile.open(ofile_loc + ofile_middle + ofile_name, ios::app);
     outfile << "data for cell type " << index << " sim number " << sim_number << endl;
 }
 
