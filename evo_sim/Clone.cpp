@@ -16,9 +16,6 @@
 #include "MutationHandler.h"
 using namespace std;
 
-int seed3 =  std::chrono::high_resolution_clock::now().time_since_epoch().count();
-mt19937 eng3(seed3);
-
 void Clone::removeOneCell(){
     cell_count--;
     cell_type->subtractOneCell(birth_rate);
@@ -81,7 +78,7 @@ HeritableClone::HeritableClone(CellType& type) : StochClone(type){
 
 void SimpleClone::reproduce(){
     uniform_real_distribution<double> runif;
-    if (runif(eng3) < mut_prob){
+    if (runif(*eng) < mut_prob){
         MutationHandler& mut_handle = cell_type->getMutHandler();
         mut_handle.generateMutant(*cell_type, birth_rate, mut_prob);
         SimpleClone *new_node = new SimpleClone(mut_handle.getNewType(), mut_handle.getNewBirthRate(), mut_handle.getNewMutProb(), 1);
@@ -139,7 +136,7 @@ double StochClone::drawLogNorm(double mean, double var){
     double loc = log(pow(mean, 2.0)/sqrt(var+pow(mean,2.0)));
     double scale = sqrt(log(1.0+var/pow(mean,2.0)));
     normal_distribution<double> norm(loc, scale);
-    double to_return = exp(norm(eng3));
+    double to_return = exp(norm(*eng));
     if (to_return < 0){
         return 0;
     }
@@ -148,7 +145,7 @@ double StochClone::drawLogNorm(double mean, double var){
 
 void TypeSpecificClone::reproduce(){
     uniform_real_distribution<double> runif;
-    if (runif(eng3) < mut_prob){
+    if (runif(*eng) < mut_prob){
         removeOneCell();
         MutationHandler& mut_handle = cell_type->getMutHandler();
         mut_handle.generateMutant(*cell_type, mean, mut_prob);
@@ -169,7 +166,7 @@ void TypeSpecificClone::reproduce(){
 
 void HeritableClone::reproduce(){
     uniform_real_distribution<double> runif;
-    if (runif(eng3) < mut_prob){
+    if (runif(*eng) < mut_prob){
         MutationHandler& mut_handle = cell_type->getMutHandler();
         mut_handle.generateMutant(*cell_type, birth_rate, mut_prob);
         removeOneCell();

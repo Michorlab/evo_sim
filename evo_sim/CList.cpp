@@ -17,9 +17,6 @@
 #include <cstdlib>
 using namespace std;
 
-int seed2 =  std::chrono::high_resolution_clock::now().time_since_epoch().count();
-mt19937 eng2(seed2);
-
 CList::CList(double death, MutationHandler& mut_handle, int max){
     d = death;
     tot_rate = 0;
@@ -98,8 +95,8 @@ void CList::advance()
 {
     uniform_real_distribution<double> runif;
     
-    time += -log(runif(eng2))/(tot_rate + d*tot_cell_count);
-    double b_or_d = runif(eng2)*(tot_rate + d*tot_cell_count);
+    time += -log(runif(*eng))/(tot_rate + d*tot_cell_count);
+    double b_or_d = runif(*eng)*(tot_rate + d*tot_cell_count);
     if (b_or_d < (d * tot_cell_count)){
         Clone& dead = chooseDead();
         if (dead.isSingleCell()){
@@ -118,7 +115,7 @@ void CList::advance()
 Clone& CList::chooseReproducer(){
     uniform_real_distribution<double> runif;
     
-    double ran = runif(eng2) * tot_rate;
+    double ran = runif(*eng) * tot_rate;
     CellType *rep_type = root;
     while (rep_type->getNumCells() == 0){
         rep_type = rep_type->getNext();
@@ -135,7 +132,7 @@ Clone& CList::chooseReproducer(){
 Clone& CList::chooseDead(){
     uniform_real_distribution<double> runif;
     
-    double ran = runif(eng2) * tot_cell_count;
+    double ran = runif(*eng) * tot_cell_count;
     CellType *dead_type = root;
     while (dead_type->getNumCells() == 0){
         dead_type = dead_type->getNext();

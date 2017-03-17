@@ -9,8 +9,11 @@
 #include <cstdlib>
 #include <iomanip>
 #include <vector>
+#include <random>
 
 using namespace std;
+
+extern __thread std::mt19937 *eng;
 
 class CList;
 class Clone;
@@ -18,15 +21,34 @@ class MutationHandler;
 class OutputWriter;
 
 class ThreadInput{
+    /* a datatype for passing in arguments to multiple simulation worker threads.
+     should be able to be shared as a single instance for all threads.
+     THREAD SAFE for all public methods
+     */
 private:
+    // sim_number is the only member that changes after initialization
     int sim_number;
+    // lock for sim_number
     pthread_mutex_t *lock;
-public:
     string outfolder;
     string infilename;
     string model_type;
-    ThreadInput(pthread_mutex_t *new_lock);
+public:
+    ThreadInput(pthread_mutex_t *new_lock, string new_out, string new_in, string model);
+    
+    /* called by each thread when refreshing the simulation- requests next available simulation number
+     @return the ID number of the next simulation. will return even when the next number is greater than the number of simulations to be run.
+     */
     int getSimNumberAndAdvance();
+    string getOutfolder(){
+        return outfolder;
+    }
+    string getInfile(){
+        return infilename;
+    }
+    string getModel(){
+        return model_type;
+    }
 };
 
 class CellType{
@@ -119,7 +141,10 @@ public:
 };
 
 class EndListener{
+    /* represents a condition under which one simulation trial should be stopped (e.g. after a certain time, after a certain mutation occurs, etc). can have many together in one simulation. do not require refreshing.
+     */
 public:
+    // @return whether the simulation should end
     virtual bool shouldEnd(CList& clone_list) = 0;
     virtual bool readLine(vector<string>& parsed_line) = 0;
 };
@@ -134,11 +159,13 @@ public:
 };
 
 class CompositeListener: public EndListener{
+    // container for multiple EndListeners that act on a single simulation
 private:
     vector<EndListener*> *listeners;
 public:
     CompositeListener();
     ~CompositeListener();
+    // @return whether the simulation should end as determined by all of the EndListeners inside
     bool shouldEnd(CList& clone_list);
     bool readLine(vector<string>& parsed_line){return true;}
     void addListener(EndListener& listener);

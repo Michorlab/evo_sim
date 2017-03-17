@@ -20,18 +20,16 @@
 #include "OutputWriter.h"
 #include "MutationHandler.h"
 
-// initialize RNG
-int seed1 =  std::chrono::high_resolution_clock::now().time_since_epoch().count();
-std::mt19937 eng(seed1);
-
-// shared simulation conditions: should ONLY be modified in thread safe manner.
-
+// common RNG that is thread safe
+__thread std::mt19937 *eng;
 
 void *sim_thread(void *arg){
+    int seed1 =  std::chrono::high_resolution_clock::now().time_since_epoch().count();
+    eng = new mt19937(seed1);
     ThreadInput *data = (ThreadInput *)arg;
-    string outfolder = data->outfolder;
-    string infilename = data->infilename;
-    string model_type = data->model_type;
+    string outfolder = data->getOutfolder();
+    string infilename = data->getInfile();
+    string model_type = data->getModel();
     
     ofstream errfile;
     errfile.open(outfolder+"input_err.eevo");
@@ -91,6 +89,7 @@ void *sim_thread(void *arg){
     }
     
     delete clone_list;
+    delete eng;
     writers.clear();
     pthread_exit(NULL);
 }
@@ -127,10 +126,7 @@ int main(int argc, char *argv[]){
     pthread_t threads[num_cores];
     int rc=0;
     pthread_mutex_init(&lock_sim_number, NULL);
-    ThreadInput thread_data(&lock_sim_number);
-    thread_data.model_type = model_type;
-    thread_data.infilename = infilename;
-    thread_data.outfolder = outfolder;
+    ThreadInput thread_data(&lock_sim_number, outfolder, infilename, model_type);
     
     for (int i=0; i<num_cores; i++){
         
@@ -147,9 +143,12 @@ int main(int argc, char *argv[]){
 
 //=============CLASS METHODS==================
 
-ThreadInput::ThreadInput(pthread_mutex_t* new_lock){
+ThreadInput::ThreadInput(pthread_mutex_t *new_lock, string new_out, string new_in, string model){
     sim_number = 1;
     lock = new_lock;
+    outfolder = new_out;
+    infilename = new_in;
+    model_type = model;
 }
 
 int ThreadInput::getSimNumberAndAdvance(){
