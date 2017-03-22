@@ -29,13 +29,17 @@ private:
     // sim_number is the only member that changes after initialization
     int sim_number;
     // lock for sim_number
-    pthread_mutex_t *lock;
+    pthread_mutex_t *num_lock;
     string outfolder;
     string infilename;
     string model_type;
+    // lock for all writers in the simulation
+    pthread_mutex_t *write_lock;
 public:
-    ThreadInput(pthread_mutex_t *new_lock, string new_out, string new_in, string model);
-    
+    ThreadInput(pthread_mutex_t *new_lock, pthread_mutex_t *new_write_lock, string new_out, string new_in, string model);
+    pthread_mutex_t* getWriteLock(){
+        return write_lock;
+    }
     /* called by each thread when refreshing the simulation- requests next available simulation number
      @return the ID number of the next simulation. will return even when the next number is greater than the number of simulations to be run.
      */
@@ -89,6 +93,10 @@ private:
     void setCloneList(CList& clist){
         clone_list = &clist;
     }
+    vector<double> empirical_dist;
+    vector<double>* getEmpiricalDist(){
+        return &empirical_dist;
+    }
 public:
     /* @param i cell type id. should be unique in the clone list typespace.
      @param parent_type cell type that formed this type, via mutation. if one of the original types in simulation, then NULL.
@@ -138,6 +146,18 @@ public:
         return *clone_list;
     }
     void insertClone(Clone& new_clone);
+    void addDistPoint(double new_birth){
+        empirical_dist.push_back(new_birth);
+    }
+    double getDistByIndex(int index){
+        return empirical_dist[index];
+    }
+    bool hasDist(){
+        return empirical_dist.size() > 0;
+    }
+    int getDistSize(){
+        return empirical_dist.size();
+    }
 };
 
 class EndListener{

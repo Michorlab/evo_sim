@@ -37,6 +37,8 @@ public:
 };
 
 class FinalOutputWriter: public OutputWriter{
+    /* only writes before or after the simulation is run. all writes are thread safe IF AND ONLY IF the write buffer is flushed at the end of each writing method.
+     */
 public:
     FinalOutputWriter(string ofile);
     virtual void finalAction(CList& clone_list) = 0;
@@ -46,6 +48,9 @@ public:
 };
 
 class DuringOutputWriter: public OutputWriter{
+    /* can update and/or write after every simulation timestep.
+     SHOULD NOT write to files shared between multiple trials during the simulation- NOT thread safe. Use a simulation specific file for this purpose.
+     */
 protected:
     int writing_period;
     int last_written;

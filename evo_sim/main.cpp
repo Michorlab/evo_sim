@@ -30,6 +30,7 @@ void *sim_thread(void *arg){
     string outfolder = data->getOutfolder();
     string infilename = data->getInfile();
     string model_type = data->getModel();
+    pthread_mutex_t *write_lock = data->getWriteLock();
     
     ofstream errfile;
     errfile.open(outfolder+"input_err.eevo");
@@ -67,20 +68,23 @@ void *sim_thread(void *arg){
     int sim_num = data->getSimNumberAndAdvance();
     
     while (sim_num <= params.getNumSims()){
+        pthread_mutex_lock(write_lock);
         for (vector<OutputWriter *>::iterator it = writers.begin(); it != writers.end(); ++it){
             (*it)->setSimNumber(sim_num);
             (*it)->beginAction(*clone_list);
         }
+        pthread_mutex_unlock(write_lock);
         while (!clone_list->noTypesLeft() && !clone_list->isExtinct() && !end_conditions.shouldEnd(*clone_list)){
             clone_list->advance();
             for (vector<OutputWriter *>::iterator it = writers.begin(); it != writers.end(); ++it){
                 (*it)->duringSimAction(*clone_list);
             }
         }
+        pthread_mutex_lock(write_lock);
         for (vector<OutputWriter *>::iterator it = writers.begin(); it != writers.end(); ++it){
             (*it)->finalAction(*clone_list);
         }
-        
+        pthread_mutex_unlock(write_lock);
         infile.open(infilename);
         params.refreshSim(infile);
         infile.close();
@@ -101,6 +105,7 @@ int main(int argc, char *argv[]){
     char tmp;
     int num_cores = 1;
     pthread_mutex_t lock_sim_number;
+    pthread_mutex_t lock_writers;
     
     while((tmp=getopt(argc,argv,"i:o:m:n:"))!=-1){
         switch(tmp){
@@ -126,7 +131,8 @@ int main(int argc, char *argv[]){
     pthread_t threads[num_cores];
     int rc=0;
     pthread_mutex_init(&lock_sim_number, NULL);
-    ThreadInput thread_data(&lock_sim_number, outfolder, infilename, model_type);
+    pthread_mutex_init(&lock_writers, NULL);
+    ThreadInput thread_data(&lock_sim_number, &lock_writers, outfolder, infilename, model_type);
     
     for (int i=0; i<num_cores; i++){
         
@@ -143,26 +149,31 @@ int main(int argc, char *argv[]){
 
 //=============CLASS METHODS==================
 
-ThreadInput::ThreadInput(pthread_mutex_t *new_lock, string new_out, string new_in, string model){
+ThreadInput::ThreadInput(pthread_mutex_t *new_lock, pthread_mutex_t *new_write_lock, string new_out, string new_in, string model){
     sim_number = 1;
-    lock = new_lock;
+    num_lock = new_lock;
+    write_lock = new_write_lock;
     outfolder = new_out;
     infilename = new_in;
     model_type = model;
 }
 
 int ThreadInput::getSimNumberAndAdvance(){
-    pthread_mutex_lock(lock);
+    pthread_mutex_lock(num_lock);
     int sim_num = sim_number;
     sim_number++;
-    pthread_mutex_unlock(lock);
+    pthread_mutex_unlock(num_lock);
     return sim_num;
 }
 
 CellType::CellType(int i, CellType *parent_type){
     index = i;
+    total_birth_rate = 0;
     parent = parent_type;
     children = std::vector<CellType *>();
+    if (parent_type){
+        empirical_dist = *parent_type->getEmpiricalDist();
+    }
     num_cells = 0;
     root_node = NULL;
     end_node = NULL;
@@ -551,6 +562,38 @@ bool SimParams::make_clone(vector<string> &parsed_line){
         for (int i=0; i<num_cells; i++){
             
             new_clone = new HeritableClone(*new_type);
+            if (!new_clone->readLine(parsed_line)){
+                err_type = "bad clone";
+                return false;
+            }
+            new_type->insertClone(*new_clone);
+        }
+    }
+    else if (type == "HerEmpiric"){
+        if (parsed_line.size() != 5){
+            err_type = "bad params for HerEmpiricClone";
+            return false;
+        }
+        Clone *new_clone;
+        for (int i=0; i<num_cells; i++){
+            
+            new_clone = new HerEmpiricClone(*new_type);
+            if (!new_clone->readLine(parsed_line)){
+                err_type = "bad clone";
+                return false;
+            }
+            new_type->insertClone(*new_clone);
+        }
+    }
+    else if (type == "TypeEmpiric"){
+        if (parsed_line.size() != 5){
+            err_type = "bad params for TypeEmpiricClone";
+            return false;
+        }
+        Clone *new_clone;
+        for (int i=0; i<num_cells; i++){
+            
+            new_clone = new TypeEmpiricClone(*new_type);
             if (!new_clone->readLine(parsed_line)){
                 err_type = "bad clone";
                 return false;

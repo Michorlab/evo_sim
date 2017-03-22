@@ -201,6 +201,7 @@ void TunnelWriter::finalAction(CList& clone_list){
     is_2 = is_2 && (clone_list.getTypeByIndex(2)->getNumCells() == clone_list.getNumCells());
     tunneled = is_2 && tunneled;
     outfile << sim_number << ", " << tunneled << endl;
+    outfile.flush();
     sim_number ++;
     tunneled = true;
 }
@@ -273,6 +274,7 @@ IsExtinctWriter::IsExtinctWriter(string ofile): FinalOutputWriter(ofile){
 
 void IsExtinctWriter::finalAction(CList& clone_list){
     outfile << sim_number << ", " << clone_list.isExtinct() << endl;
+    outfile.flush();
     sim_number++;
 }
 
@@ -288,6 +290,7 @@ EndTimeWriter::EndTimeWriter(string ofile): FinalOutputWriter(ofile){
 
 void EndTimeWriter::finalAction(CList& clone_list){
     outfile << sim_number << ", " << clone_list.getCurrTime() << endl;
+    outfile.flush();
     sim_number++;
 }
 
@@ -305,6 +308,7 @@ void IfType2Writer::finalAction(CList& clone_list){
     bool is_2 = clone_list.getTypeByIndex(2);
     is_2 = is_2 && (clone_list.getTypeByIndex(2)->getNumCells() == clone_list.getNumCells());
     outfile << sim_number << ", " << is_2 << endl;
+    outfile.flush();
     sim_number++;
 }
 

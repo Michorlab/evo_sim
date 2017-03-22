@@ -31,7 +31,7 @@ protected:
     double mut_prob;
     
     void addCells(int num_cells);
-    bool checkRep(){
+    virtual bool checkRep(){
         return !(mut_prob < 0 || birth_rate < 0 || cell_count <= 0);
     }
 public:
@@ -95,6 +95,17 @@ public:
     StochClone(CellType& type, double mut);
 };
 
+class EmpiricalClone: public StochClone{
+protected:
+    double drawEmpirical(double mean, double var);
+    bool readDist(string filename);
+public:
+    virtual void reproduce() = 0;
+    virtual bool readLine(vector<string>& parsed_line) = 0;
+    EmpiricalClone(CellType& type);
+    EmpiricalClone(CellType& type, double mut);
+};
+
 class SimpleClone: public Clone{
 public:
     SimpleClone(CellType& type, double b, double mut, int num_cells);
@@ -123,6 +134,30 @@ public:
     HeritableClone(CellType& type, double mu, double sig, double mut);
     HeritableClone(CellType& type, double mu, double sig, double mut, double offset);
     HeritableClone(CellType& type);
+    void reproduce();
+    bool readLine(vector<string>& parsed_line);
+};
+
+class TypeEmpiricClone: public EmpiricalClone{
+private:
+    double mean;
+    double var;
+public:
+    TypeEmpiricClone(CellType& type, double mu, double sig, double mut);
+    TypeEmpiricClone(CellType& type, double mu, double sig, double mut, double offset);
+    TypeEmpiricClone(CellType& type);
+    void reproduce();
+    bool readLine(vector<string>& parsed_line);
+};
+
+class HerEmpiricClone: public EmpiricalClone{
+private:
+    double mean;
+    double var;
+public:
+    HerEmpiricClone(CellType& type, double mu, double sig, double mut);
+    HerEmpiricClone(CellType& type, double mu, double sig, double mut, double offset);
+    HerEmpiricClone(CellType& type);
     void reproduce();
     bool readLine(vector<string>& parsed_line);
 };

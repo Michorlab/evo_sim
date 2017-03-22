@@ -1,5 +1,4 @@
-
-CC = g++ -std=c++11 -static-libstdc++
+CC = g++ -std=c++11 -static-libstdc++ -lpthread
 DEBUG = -g
 CFLAGS = -Wall -c $(DEBUG)
 LFLAGS = -Wall $(DEBUG)
