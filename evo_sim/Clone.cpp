@@ -383,5 +383,5 @@ bool EmpiricalClone::readDist(string filename){
 double EmpiricalClone::drawEmpirical(double mean, double var){
     uniform_real_distribution<double> runif;
     int index = floor(runif(*eng) * cell_type->getDistSize());
-    return (cell_type->getDistByIndex(index) * var) + mean;
+    return (cell_type->getDistByIndex(index) * sqrt(var)) + mean;
 }
