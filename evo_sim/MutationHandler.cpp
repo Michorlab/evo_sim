@@ -12,6 +12,7 @@
 #include <sstream>
 #include <vector>
 #include <string>
+#include <random>
 
 using namespace std;
 
@@ -19,6 +20,16 @@ ThreeTypesMutation::ThreeTypesMutation(double m2, double f1, double f2){
     mu2 = m2;
     fit1 = f1;
     fit2 = f2;
+    birth_rate = 0;
+    mut_prob = 0;
+    new_type = NULL;
+}
+
+ThreeTypesFlexMutation::ThreeTypesFlexMutation(double m2, double f1, double f2, double pr1){
+    mu2 = m2;
+    fit1 = f1;
+    fit2 = f2;
+    p1 = pr1;
     birth_rate = 0;
     mut_prob = 0;
     new_type = NULL;
@@ -49,6 +60,31 @@ void ThreeTypesMutation::generateMutant(CellType& type, double b, double mut){
         birth_rate = b + fit1;
         mut_prob = mu2;
         new_type = getNewTypeByIndex(1, type);
+    }
+}
+
+void ThreeTypesFlexMutation::generateMutant(CellType& type, double b, double mut){
+    if (!(type.getIndex() <= 1)){
+        throw "bad three types mutating cell type";
+    }
+    if (type.getIndex() == 1){
+        birth_rate = fit2;
+        mut_prob = 0;
+        new_type = getNewTypeByIndex(2, type);
+    }
+    else if (type.getIndex() == 0){
+        uniform_real_distribution<double> runif;
+        double which_trans = runif(*eng);
+        if (which_trans < p1){
+            birth_rate = fit2;
+            mut_prob = 0;
+            new_type = getNewTypeByIndex(2, type);
+        }
+        else{
+            birth_rate = fit1;
+            mut_prob = mu2;
+            new_type = getNewTypeByIndex(1, type);
+        }
     }
 }
 
@@ -115,3 +151,46 @@ bool ThreeTypesMutation::read(std::vector<string>& params){
     }
     return true;
 }
+
+bool ThreeTypesFlexMutation::read(std::vector<string>& params){
+    
+    string pre;
+    string post;
+    bool isMu2 = false;
+    bool isFit1 = false;
+    bool isFit2 = false;
+    bool isP1 = false;
+    for (int i=0; i<int(params.size()); i++){
+        string tok = params[i];
+        stringstream ss;
+        ss.str(tok);
+        getline(ss, pre, ',');
+        if (!getline(ss, post)){
+            return false;
+        }
+        if (pre=="mu2"){
+            isMu2 = true;
+            mu2 =stod(post);
+        }
+        else if (pre=="fit1"){
+            isFit1 = true;
+            fit1 =stod(post);
+        }
+        else if (pre=="fit2"){
+            isFit2 = true;
+            fit2 =stod(post);
+        }
+        else if (pre=="p1"){
+            isP1 = true;
+            p1 =stod(post);
+        }
+        else{
+            return false;
+        }
+    }
+    if (!isMu2 || !isFit1 || !isFit2 || !isP1){
+        return false;
+    }
+    return true;
+}
+
