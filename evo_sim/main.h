@@ -232,10 +232,17 @@ private:
      @return true iff line was correctly formatted and read.
      */
     bool handle_sim_line(vector<string>& parsed_line);
+    
+    /* all of the following check the parse line, and if possible, makes and inserts the appropriate object into the simulation
+     THEY MAY DESTROY OR MODIFY THE PARSED LINE OBJECT
+     @return true iff the object was properly created
+     */
     bool make_mut_handler();
     bool make_clone(vector<string>& parsed_line);
     bool make_writer(vector<string>& parsed_line);
     bool make_listener(vector<string>& parsed_line);
+    bool make_multiclone(vector<string>& parsed_line);
+    
     int err_line;
     string err_type;
     string mut_type;

@@ -351,6 +351,10 @@ void SimParams::refreshSim(ifstream& infile){
             parsed_line.erase(parsed_line.begin());
             make_clone(parsed_line);
         }
+        else if(parsed_line[0] == "multiclone"){
+            parsed_line.erase(parsed_line.begin());
+            make_multiclone(parsed_line);
+        }
         parsed_line.clear();
     }
 
@@ -406,6 +410,16 @@ bool SimParams::handle_line(string& line){
             return false;
         }
     }
+    else if (parsed_line[0] == "multiclone"){
+        /* used when creating several clone types which are equivalent except in type id
+         syntax: multiclone [num_types] clone [clone_type] [clone params]*
+         the type id provided in the clone params will be ignored
+         */
+        parsed_line.erase(parsed_line.begin());
+        if (!make_multiclone(parsed_line)){
+            return false;
+        }
+    }
     else if (parsed_line[0] == "writer"){
         parsed_line.erase(parsed_line.begin());
         if (!make_writer(parsed_line)){
@@ -421,6 +435,21 @@ bool SimParams::handle_line(string& line){
     else{
         err_type = "bad first keyword " + parsed_line[0];
         return false;
+    }
+    return true;
+}
+
+bool SimParams::make_multiclone(vector<string> &parsed_line){
+    int num_types = stoi(parsed_line[0]);
+    parsed_line.erase(parsed_line.begin());
+    parsed_line.erase(parsed_line.begin());
+    std::vector<string> parsed_copy = parsed_line;
+    for (int i=0; i<num_types; i++){
+        parsed_line = parsed_copy;
+        parsed_line[1] = to_string(i);
+        if (!make_clone(parsed_line)){
+            return false;
+        }
     }
     return true;
 }
@@ -664,80 +693,3 @@ void SimParams::writeErrors(ofstream& errfile){
     errfile << "error type: " << err_type << endl;
     errfile << "error line: " << err_line << endl;
 }
-
-/*
-// Generate random number for mutational fitness distribution
-// right now, just a truncated double exponential distribution
-// nonsymmetric Laplace distribution with an atom at 0 having probability p0
-// alpha: positive rate, beta: negative rate, upper: positive bound,
-// lower: negative bound
-double gen_fit(double alpha, double beta, double upper, double lower, double p0){
-    
-    uniform_real_distribution<double> runif;
-    
-    double tmp;
-    double z = runif(eng); //  double z = runif(eng);
-    
-    if (z <= p0){
-        
-        // return 0 since atom with prob p0
-        tmp = 0.0;
-        
-    } else if ((z > p0) && (z <= p0 + (1 - p0) / 2)){
-        
-        // return value from positive side using inverse cdf of truncated exp
-        double u = runif(eng); //double u = runif(eng);
-        tmp = -log(1.0 - (1.0 - exp(-alpha * upper)) * u) / alpha;
-        
-    } else{
-        
-        //return value from negative side (note we need to take abs of lower bound)
-        double u = runif(eng);    //  double u = runif(eng);
-        tmp = log(1.0 - (1.0 - exp(-beta * abs(lower))) * u) / beta;
-        
-    }
-    
-    return tmp;
-    
-}
-
-
-// Different distribution which should have same  shape as fitness distribution
-double gen_mut(double alpha, double beta, double upper, double lower,
-               double multiplier, double now_t, double tau, double period,
-               double start_burst_t){
-    
-    uniform_real_distribution<double> runif;
-    
-    double tmp;
-    double z = runif(eng); //  double z = runif(eng);
-    
-    
-    if (z <= 0.5){
-        
-        // return value from positive side using inverse cdf of truncated exp
-        double u = runif(eng); //double u = runif(eng);
-        tmp = -log(1.0 - (1.0 - exp(-alpha * upper)) * u) / alpha;
-        
-    } else{
-        
-        //return value from negative side (note we need to take abs of lower bound)
-        double u = runif(eng);    //  double u = runif(eng);
-        tmp = log(1.0 - (1.0 - exp(-beta * abs(lower))) * u) / beta;
-        
-    }
-    
-    // Pulse wave function to create bursts (when to use multiplier)
-    if(now_t >= start_burst_t & fmod(now_t, period) < tau){
-        tmp = tmp * multiplier;
-    }
-    
-    if(tmp < 0){
-        tmp = 0;
-    } else if(tmp > 1){
-        tmp = 1;
-    }
-    return tmp;
-    
-}
-*/

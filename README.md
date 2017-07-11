@@ -1,6 +1,9 @@
 # evo_sim
 
-This software package is a framework for simulating stochastic evolutionary processes. Currently it implements both branching process and Moran process simulations. However, this software can be modified to implement arbitrary birth-death processes, while retaining the same input/output and multithreading structures. Similarly, additional output data writers, mutational behaviors, reproduction strategies, inheritance models, and clone-associated data (such as barcodes) can be added to the software while retaining the functionality of the rest of the software. The strength of this package is its modularity and ease of customization.
+This C++ software package is a framework for simulating stochastic evolutionary processes. Currently it implements both branching process and Moran process simulations. However, this software can be modified to implement arbitrary birth-death processes, while retaining the same input/output and multithreading structures. Similarly, additional output data writers, mutational behaviors, reproduction strategies, inheritance models, and clone-associated data (such as barcodes) can be added to the software while retaining the functionality of the rest of the software. The strength of this package is its modularity and ease of customization.
+
+## Compiling
+Run make from the command line in the evo_sim directory. A build directory containing the executable will be created.
 
 ## Command-line interface and file types
 The command line call format is: evo_sim -i [input file path] -o [output file folder path] -m [simulation type] -n [number of threads]
@@ -18,4 +21,6 @@ There are currently 5 general types of valid commands in an input file. These ar
 2. pop_params commands. These are cell population parameters. Currently, the death rate and maximum cell types parameters are required.
 3. writer commands. These are optional and determine what data from the simulation will be written to output files.
 4. listener commands. These are optional and determine what stopping conditions each simulation trial will have. Simulation trials will always stop when there are no cells left in the population.
-5. clone commands. These determine what clones are present initially. At least one clone command is required.
+5. clone and multiclone commands. These determine what clones are present initially. At least one clone or multiclone command is required. multiclone lines are used to create many clone types with the same initial properties (fitness distributions, initial numbers, and inheritance models).
+
+readme updated 7/11/2017 by dve
