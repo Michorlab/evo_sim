@@ -413,7 +413,7 @@ bool SimParams::handle_line(string& line){
     else if (parsed_line[0] == "multiclone"){
         /* used when creating several clone types which are equivalent except in type id
          syntax: multiclone [num_types] clone [clone_type] [clone params]*
-         the type id provided in the clone params will be ignored
+         the type id provided in the clone params IS THE LOWEST CLONE ID OF THE SET OF CLONES TO BE MADE
          */
         parsed_line.erase(parsed_line.begin());
         if (!make_multiclone(parsed_line)){
@@ -446,7 +446,7 @@ bool SimParams::make_multiclone(vector<string> &parsed_line){
     std::vector<string> parsed_copy = parsed_line;
     for (int i=0; i<num_types; i++){
         parsed_line = parsed_copy;
-        parsed_line[1] = to_string(i);
+        parsed_line[1] = to_string(i + stoi(parsed_line[1]));
         if (!make_clone(parsed_line)){
             return false;
         }
@@ -676,6 +676,9 @@ bool SimParams::make_mut_handler(){
     }
     else if (mut_type == "ThreeTypesFlex"){
         mut_handler = new ThreeTypesFlexMutation();
+    }
+    else if (mut_type == "ManyTypesFlex"){
+        mut_handler = new ManyTypesFlexMutation();
     }
     else{
         err_type = "bad mut type";

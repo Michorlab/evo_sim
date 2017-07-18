@@ -86,6 +86,21 @@ public:
     bool read(std::vector<string>& params);
 };
 
+class ManyTypesFlexMutation: public MutationHandler {
+protected:
+    double mu2;
+    //probability that type 0 will go directly to type 2
+    double p1;
+    double fit1;
+    double fit2;
+    int num_types;
+public:
+    ManyTypesFlexMutation(){};
+    ManyTypesFlexMutation(double m2, double f1, double f2, double pr1, int ntypes);
+    virtual void generateMutant(CellType& type, double b, double mut);
+    bool read(std::vector<string>& params);
+};
+
 class ThreeTypesMultMutation: public ThreeTypesMutation{
 public:
     ThreeTypesMultMutation(){};
