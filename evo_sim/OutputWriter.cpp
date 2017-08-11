@@ -7,6 +7,7 @@
 //
 
 #include "OutputWriter.h"
+#include "MutationHandler.h"
 #include "main.h"
 #include "Clone.h"
 #include "CList.h"
@@ -83,6 +84,10 @@ CellCountWriter::CellCountWriter(string ofile): DuringOutputWriter(ofile){
     index = 0;
 }
 
+NumMutationsWriter::NumMutationsWriter(string ofile): DuringOutputWriter(ofile){
+    index = 0;
+}
+
 CountStepWriter::CountStepWriter(string ofile): DuringOutputWriter(ofile){
     index = 0;
     timestep = 0;
@@ -103,8 +108,18 @@ bool CountStepWriter::readLine(vector<string>& parsed_line){
     return true;
 }
 
-bool CountStepWriter::shouldWrite(CList &clone_list){
-    return (timestep%writing_period==0);
+bool NumMutationsWriter::readLine(vector<string>& parsed_line){
+    if (parsed_line.size() != 1){
+        return false;
+    }
+    try{
+        index =stoi(parsed_line[0]);
+    }
+    catch (...){
+        return false;
+    }
+    ofile_name = "type_" + to_string(index) + ".oevo";
+    return true;
 }
 
 bool CellCountWriter::readLine(vector<string>& parsed_line){
@@ -129,6 +144,12 @@ void CellCountWriter::beginAction(CList& clone_list){
     outfile << clone_list.getCurrTime() << ", " << clone_list.getTypeByIndex(index)->getNumCells() << endl;
 }
 
+void NumMutationsWriter::beginAction(CList& clone_list){
+    string ofile_middle = "muts_sim_"+to_string(sim_number);
+    outfile.open(ofile_loc + ofile_middle + ofile_name, ios::app);
+    outfile << "data for cell type " << index << " sim number " << sim_number << endl;
+}
+
 void CountStepWriter::beginAction(CList& clone_list){
     string ofile_middle = "count_step_sim_"+to_string(sim_number);
     outfile.open(ofile_loc + ofile_middle + ofile_name, ios::app);
@@ -137,6 +158,11 @@ void CountStepWriter::beginAction(CList& clone_list){
 }
 
 CountStepWriter::~CountStepWriter(){
+    outfile.flush();
+    outfile.close();
+}
+
+NumMutationsWriter::~NumMutationsWriter(){
     outfile.flush();
     outfile.close();
 }
@@ -159,6 +185,13 @@ void CellCountWriter::duringSimAction(CList& clone_list){
     }
 }
 
+void NumMutationsWriter::duringSimAction(CList& clone_list){
+    MutationHandler* temp_mut = &(clone_list.getMutHandler());
+    if (shouldWrite(clone_list) && temp_mut->has_mut() && temp_mut->getNewType().getIndex() == index){
+        outfile << clone_list.getCurrTime() << endl;
+    }
+}
+
 void CellCountWriter::finalAction(CList& clone_list){
     outfile << clone_list.getCurrTime() << ", " << clone_list.getTypeByIndex(index)->getNumCells() << endl;
     outfile.flush();
@@ -167,6 +200,12 @@ void CellCountWriter::finalAction(CList& clone_list){
 }
 
 void CountStepWriter::finalAction(CList& clone_list){
+    outfile.flush();
+    outfile.close();
+    sim_number++;
+}
+
+void NumMutationsWriter::finalAction(CList& clone_list){
     outfile.flush();
     outfile.close();
     sim_number++;

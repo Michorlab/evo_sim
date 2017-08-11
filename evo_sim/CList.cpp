@@ -9,6 +9,7 @@
 #include "CList.h"
 #include "Clone.h"
 #include "main.h"
+#include "MutationHandler.h"
 #include <vector>
 #include <sstream>
 #include <random>
@@ -94,7 +95,7 @@ void CList::deleteList()
 void CList::advance()
 {
     uniform_real_distribution<double> runif;
-    
+    mut_model->reset();
     time += -log(runif(*eng))/(tot_rate + d*tot_cell_count);
     double b_or_d = runif(*eng)*(tot_rate + d*tot_cell_count);
     if (b_or_d < (d * tot_cell_count)){

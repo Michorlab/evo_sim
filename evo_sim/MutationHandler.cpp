@@ -72,6 +72,7 @@ void ThreeTypesMutation::generateMutant(CellType& type, double b, double mut){
         mut_prob = mu2;
         new_type = getNewTypeByIndex(1, type);
     }
+    has_mutated = true;
 }
 
 void ThreeTypesFlexMutation::generateMutant(CellType& type, double b, double mut){
@@ -97,6 +98,7 @@ void ThreeTypesFlexMutation::generateMutant(CellType& type, double b, double mut
             new_type = getNewTypeByIndex(1, type);
         }
     }
+    has_mutated = true;
 }
 
 void ManyTypesFlexMutation::generateMutant(CellType& type, double b, double mut){
@@ -122,6 +124,7 @@ void ManyTypesFlexMutation::generateMutant(CellType& type, double b, double mut)
     else{
         throw "bad mutating cell type";
     }
+    has_mutated = true;
 }
 
 void ThreeTypesMultMutation::generateMutant(CellType& type, double b, double mut){
@@ -138,6 +141,7 @@ void ThreeTypesMultMutation::generateMutant(CellType& type, double b, double mut
         mut_prob = mu2;
         new_type = getNewTypeByIndex(1, type);
     }
+    has_mutated = true;
 }
 
 void NeutralMutation::generateMutant(CellType& type, double b, double mut){
@@ -149,6 +153,7 @@ void NeutralMutation::generateMutant(CellType& type, double b, double mut){
         birth_rate = b;
         mut_prob = mut;
     }
+    has_mutated = true;
 }
 
 bool ThreeTypesMutation::read(std::vector<string>& params){

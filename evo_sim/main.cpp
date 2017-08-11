@@ -525,6 +525,9 @@ bool SimParams::make_writer(vector<string> &parsed_line){
     else if (type == "Tunnel"){
         new_writer = new TunnelWriter(*outfolder);
     }
+    else if (type == "NumMutations"){
+        new_writer = new NumMutationsWriter(*outfolder);
+    }
     else{
         err_type = "bad writer type";
         return false;

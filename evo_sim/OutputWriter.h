@@ -69,10 +69,25 @@ private:
     ofstream outfile;
     int timestep;
     int index;
-    bool shouldWrite(CList& clone_list);
 public:
     CountStepWriter(string ofile);
     ~CountStepWriter();
+    bool readLine(vector<string>& parsed_line);
+    void finalAction(CList& clone_list);
+    void duringSimAction(CList& clone_list);
+    void beginAction(CList& clone_list);
+    int getTypeIndex(){
+        return index;
+    }
+};
+
+class NumMutationsWriter: public DuringOutputWriter{
+private:
+    ofstream outfile;
+    int index;
+public:
+    NumMutationsWriter(string ofile);
+    ~NumMutationsWriter();
     bool readLine(vector<string>& parsed_line);
     void finalAction(CList& clone_list);
     void duringSimAction(CList& clone_list);

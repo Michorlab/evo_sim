@@ -26,6 +26,7 @@ class MutationHandler {
 protected:
     double birth_rate;
     double mut_prob;
+    bool has_mutated;
     CellType *new_type;
     
     /* gets the desired mutant type, either the existing type or creates a new type.
@@ -44,6 +45,10 @@ public:
     
     //@return CellType of new type, after generateMutant. should not conflict with current population typespace in clone_list.
     CellType& getNewType() {return *new_type;}
+    
+    bool has_mut() {return has_mutated;}
+    
+    void reset() {has_mutated = false;}
     
     /*
      loads parameters and calculates mutant daughter mutation rate, type, and birth rate
