@@ -32,7 +32,7 @@ protected:
     
     void addCells(int num_cells);
     virtual bool checkRep(){
-        return !(mut_prob < 0 || birth_rate < 0 || cell_count <= 0);
+        return !(mut_prob < 0 || birth_rate < 0 || cell_count < 0);
     }
 public:
     /* adjusts the linked list so the clone is no longer in the list. adjusts root and end of cell_type as appropriate.
