@@ -69,6 +69,8 @@ private:
     CellType *next_node;
     Clone *root_node;
     Clone *end_node;
+    bool has_death_rate;
+    double death;
     int index;
     int num_cells;
     double total_birth_rate;
@@ -131,6 +133,7 @@ public:
     double getBirthRate(){
         return total_birth_rate;
     }
+    double getDeathRate();
 
     CellType* getNext(){
         return next_node;
@@ -158,6 +161,7 @@ public:
     int getDistSize(){
         return empirical_dist.size();
     }
+    void setDeathRate(double death_rate);
 };
 
 class EndListener{

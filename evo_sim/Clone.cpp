@@ -51,6 +51,10 @@ Clone* Clone::getNextClone(){
     return next_node;
 }
 
+double Clone::getDeathRate(){
+    return cell_type->getDeathRate();
+}
+
 SimpleClone::SimpleClone(CellType& type, double b, double mut, int num_cells) : Clone(type, mut){
     birth_rate = b;
     cell_count = num_cells;
@@ -281,6 +285,10 @@ bool SimpleClone::readLine(vector<string>& parsed_line){
     catch (...){
         return false;
     }
+    if (parsed_line.size()>3){
+        double death = stod(parsed_line[3]);
+        cell_type->setDeathRate(death);
+    }
     return checkRep();
 }
 
@@ -294,6 +302,10 @@ bool TypeSpecificClone::readLine(vector<string>& parsed_line){
     }
     catch (...){
         return false;
+    }
+    if (parsed_line.size()>4){
+        double death = stod(parsed_line[4]);
+        cell_type->setDeathRate(death);
     }
     birth_rate = drawLogNorm(mean, var);
     return checkRep();
@@ -311,6 +323,10 @@ bool TypeEmpiricClone::readLine(vector<string>& parsed_line){
     }
     catch (...){
         return false;
+    }
+    if (parsed_line.size()>5){
+        double death = stod(parsed_line[5]);
+        cell_type->setDeathRate(death);
     }
     if (!readDist(filename)){
         return false;
@@ -330,6 +346,10 @@ bool HeritableClone::readLine(vector<string>& parsed_line){
     catch (...){
         return false;
     }
+    if (parsed_line.size()>4){
+        double death = stod(parsed_line[4]);
+        cell_type->setDeathRate(death);
+    }
     birth_rate = drawLogNorm(mean, var);
     return checkRep();
 }
@@ -346,6 +366,10 @@ bool HerEmpiricClone::readLine(vector<string>& parsed_line){
     }
     catch (...){
         return false;
+    }
+    if (parsed_line.size()>5){
+        double death = stod(parsed_line[5]);
+        cell_type->setDeathRate(death);
     }
     if (!readDist(filename)){
         return false;

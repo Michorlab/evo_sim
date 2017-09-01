@@ -32,6 +32,7 @@ protected:
     double time;
     int max_types;
     int num_types;
+    bool death_var;
     
     // stores pointers to CellTypes that have been initialized in this simulation run. may include extinct types. no Clones in the simulation should have a CellType not included in this vector.
     std::vector<CellType *> curr_types;
@@ -43,6 +44,7 @@ protected:
     
     Clone& chooseReproducer();
     Clone& chooseDead();
+    Clone& chooseDeadVar(double total_death);
     void deleteList();
     void clearClones();
     bool checkInit();
@@ -64,6 +66,7 @@ protected:
     void setRoot(CellType& new_root){
         root = &new_root;
     }
+    double getTotalDeath();
     
 public:
     CList();
@@ -82,6 +85,10 @@ public:
      @return index of next free type.
      */
     int getNextType();
+    
+    double getDeathRate(){
+        return d;
+    }
     
     CellType* getTypeByIndex(int i){
         return curr_types[i];

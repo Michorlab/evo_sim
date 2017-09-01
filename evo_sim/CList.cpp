@@ -30,6 +30,7 @@ CList::CList(double death, MutationHandler& mut_handle, int max){
     mut_model = &mut_handle;
     root = NULL;
     end_node = NULL;
+    death_var = false;
 }
 
 CList::CList(){
@@ -41,6 +42,7 @@ CList::CList(){
     end_node = NULL;
     mut_model = NULL;
     d = 0;
+    death_var = false;
 }
 
 void CList::clearClones(){
@@ -60,6 +62,7 @@ void CList::refreshSim(){
     root = NULL;
     end_node = NULL;
     root_types.clear();
+    death_var = false;
 }
 
 void CList::insertCellType(CellType& new_type) {
@@ -96,16 +99,32 @@ void CList::advance()
 {
     uniform_real_distribution<double> runif;
     mut_model->reset();
-    time += -log(runif(*eng))/(tot_rate + d*tot_cell_count);
-    double b_or_d = runif(*eng)*(tot_rate + d*tot_cell_count);
-    if (b_or_d < (d * tot_cell_count)){
-        Clone& dead = chooseDead();
-        if (dead.isSingleCell()){
-            delete &dead;
+    double total_death = d*tot_cell_count;
+    if (death_var){
+        total_death = getTotalDeath();
+    }
+    time += -log(runif(*eng))/(tot_rate + total_death);
+    double b_or_d = runif(*eng)*(tot_rate + total_death);
+    if (b_or_d < (total_death)){
+        if (death_var){
+             Clone& dead = chooseDeadVar(total_death);
+            if (dead.isSingleCell()){
+                delete &dead;
+            }
+            else{
+                dead.removeOneCell();
+            }
         }
         else{
-            dead.removeOneCell();
+             Clone& dead = chooseDead();
+            if (dead.isSingleCell()){
+                delete &dead;
+            }
+            else{
+                dead.removeOneCell();
+            }
         }
+
     }
     else{
         Clone& mother = chooseReproducer();
@@ -130,14 +149,43 @@ Clone& CList::chooseReproducer(){
     return *reproducer;
 }
 
-Clone& CList::chooseDead(){
+double CList::getTotalDeath(){
+    CellType *curr_type = root;
+    double total_d = 0;
+    while (curr_type){
+        total_d += curr_type->getDeathRate() * curr_type->getNumCells();
+        curr_type = curr_type->getNext();
+    }
+    return total_d;
+}
+
+Clone& CList::chooseDeadVar(double total_death){
     uniform_real_distribution<double> runif;
-    
-    double ran = runif(*eng) * tot_cell_count;
+    double ran = runif(*eng);
     CellType *dead_type = root;
     while (dead_type->getNumCells() == 0){
         dead_type = dead_type->getNext();
     }
+    ran = ran * total_death;
+    Clone *dead = dead_type->getRoot();
+    double curr_rate = dead->getCellCount() * dead->getDeathRate();
+    while (curr_rate < ran && dead->getNextClone()){
+        dead = dead->getNextClone();
+        curr_rate += dead->getCellCount() * dead->getDeathRate();
+    }
+    return *dead;
+
+}
+
+Clone& CList::chooseDead(){
+    uniform_real_distribution<double> runif;
+    double ran = runif(*eng);
+    CellType *dead_type = root;
+    while (dead_type->getNumCells() == 0){
+        dead_type = dead_type->getNext();
+    }
+    ran = ran * tot_cell_count;
+    
     Clone *dead = dead_type->getRoot();
     double curr_rate = dead->getCellCount();
     while (curr_rate < ran && dead->getNextClone()){
@@ -186,6 +234,12 @@ bool CList::handle_line(vector<string>& parsed_line){
     else if(parsed_line[0] == "max_types"){
         max_types =stoi(parsed_line[1]) + 1;
         clearClones();
+    }
+    else if(parsed_line[0] == "death_var"){
+        death_var = true;
+        int type = stoi(parsed_line[1]);
+        double death = stod(parsed_line[2]);
+        getTypeByIndex(type)->setDeathRate(death);
     }
     else{
         return false;

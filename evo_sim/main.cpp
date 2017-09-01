@@ -179,6 +179,23 @@ CellType::CellType(int i, CellType *parent_type){
     end_node = NULL;
     prev_node = NULL;
     next_node = NULL;
+    has_death_rate = false;
+    death = 0.0;
+}
+
+void CellType::setDeathRate(double death_rate){
+    has_death_rate = true;
+    death = death_rate;
+    clone_list->death_var = true;
+}
+
+double CellType::getDeathRate(){
+    if (has_death_rate){
+        return death;
+    }
+    else{
+        return clone_list->getDeathRate();
+    }
 }
 
 void CellType::subtractOneCell(double b){
@@ -561,7 +578,7 @@ bool SimParams::make_clone(vector<string> &parsed_line){
     clone_list->insertCellType(*new_type);
     parsed_line.erase(parsed_line.begin());
     if (type == "Simple"){
-        if (parsed_line.size() != 3){
+        if (parsed_line.size() < 3){
             err_type = "bad params for SimpleClone";
             return false;
         }
@@ -572,7 +589,7 @@ bool SimParams::make_clone(vector<string> &parsed_line){
         new_type->insertClone(*new_clone);
     }
     else if (type == "TypeSpecific"){
-        if (parsed_line.size() != 4){
+        if (parsed_line.size() < 4){
             err_type = "bad params for TypeSpecificClone";
             return false;
         }
@@ -586,7 +603,7 @@ bool SimParams::make_clone(vector<string> &parsed_line){
         }
     }
     else if (type == "Heritable"){
-        if (parsed_line.size() != 4){
+        if (parsed_line.size() < 4){
             err_type = "bad params for HeritableClone";
             return false;
         }
@@ -602,7 +619,7 @@ bool SimParams::make_clone(vector<string> &parsed_line){
         }
     }
     else if (type == "HerEmpiric"){
-        if (parsed_line.size() != 5){
+        if (parsed_line.size() < 5){
             err_type = "bad params for HerEmpiricClone";
             return false;
         }
@@ -618,7 +635,7 @@ bool SimParams::make_clone(vector<string> &parsed_line){
         }
     }
     else if (type == "TypeEmpiric"){
-        if (parsed_line.size() != 5){
+        if (parsed_line.size() < 5){
             err_type = "bad params for TypeEmpiricClone";
             return false;
         }

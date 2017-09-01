@@ -51,6 +51,7 @@ public:
     double getBirthRate(){
         return birth_rate;
     }
+    double getDeathRate();
     double getTotalBirth(){
         return birth_rate * cell_count;
     }
