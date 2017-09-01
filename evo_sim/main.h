@@ -226,6 +226,8 @@ class SimParams{
      */
 private:
     int num_simulations;
+    vector<int> *has_dist;
+    vector<vector<int>> *dists;
     MutationHandler *mut_handler;
     CList *clone_list;
     bool handle_line(string& line);

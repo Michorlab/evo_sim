@@ -64,6 +64,9 @@ void *sim_thread(void *arg){
     }
     infile.close();
     errfile.close();
+    infile.open(infilename);
+    params.refreshSim(infile);
+    infile.close();
     
     int sim_num = data->getSimNumberAndAdvance();
     
@@ -348,6 +351,8 @@ SimParams::SimParams(CList& clist, vector<OutputWriter*>& writer_list, Composite
     writers = &writer_list;
     outfolder = &output;
     listeners = &listener;
+    has_dist = new vector<int>();
+    dists = new vector<vector<int>>();
 }
 
 void SimParams::refreshSim(ifstream& infile){
@@ -366,6 +371,15 @@ void SimParams::refreshSim(ifstream& infile){
         }
         if (parsed_line[0] == "clone"){
             parsed_line.erase(parsed_line.begin());
+            int index = stoi(parsed_line[1]);
+            auto found = std::find(has_dist->begin(), has_dist->end(), index);
+            if (found != has_dist->end()){
+                auto new_index = std::distance(has_dist->begin(), found);
+                uniform_real_distribution<double> runif;
+                int ran = floor(runif(*eng) * dists->at(new_index).size());
+                int num_cells = dists->at(new_index).at(ran);
+                parsed_line[2] = to_string(num_cells);
+            }
             make_clone(parsed_line);
         }
         else if(parsed_line[0] == "multiclone"){
@@ -420,6 +434,34 @@ bool SimParams::handle_line(string& line){
             err_type = "bad pop_params line";
             return false;
         }
+    }
+    else if (parsed_line[0] == "init_dist"){
+        parsed_line.erase(parsed_line.begin());
+        if (parsed_line.size() != 2){
+            return false;
+        }
+        has_dist->push_back(stoi(parsed_line[0]));
+        dists->push_back(*new vector<int>());
+        ifstream infile;
+        infile.open(parsed_line[1]);
+        if (!infile.is_open()){
+            return false;
+        }
+        string line;
+        while (getline(infile, line)){
+            std::stringstream ss;
+            string tok;
+            ss.str(line);
+            try{
+                while (getline(ss, tok)){
+                    dists->back().push_back(stod(tok));
+                }
+            }
+            catch(...){
+                return false;
+            }
+        }
+
     }
     else if (parsed_line[0] == "clone"){
         parsed_line.erase(parsed_line.begin());
