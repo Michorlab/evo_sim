@@ -338,6 +338,22 @@ EndTimeWriter::~EndTimeWriter(){
     outfile.close();
 }
 
+EndPopWriter::EndPopWriter(string ofile): FinalOutputWriter(ofile){
+    ofile_name = "end_pop.oevo";
+    outfile.open(ofile_loc+ofile_name, ios::app);
+}
+
+void EndPopWriter::finalAction(CList& clone_list){
+    outfile << sim_number << ", " << clone_list.getNumCells() << endl;
+    outfile.flush();
+    sim_number++;
+}
+
+EndPopWriter::~EndPopWriter(){
+    outfile.flush();
+    outfile.close();
+}
+
 IfType2Writer::IfType2Writer(string ofile): FinalOutputWriter(ofile){
     ofile_name = "iftype2.oevo";
     outfile.open(ofile_loc+ofile_name, ios::app);

@@ -578,6 +578,9 @@ bool SimParams::make_writer(vector<string> &parsed_line){
     else if (type == "EndTime"){
         new_writer = new EndTimeWriter(*outfolder);
     }
+    else if (type == "EndPop"){
+        new_writer = new EndPopWriter(*outfolder);
+    }
     else if (type == "CountStep"){
         new_writer = new CountStepWriter(*outfolder);
     }

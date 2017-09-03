@@ -223,5 +223,16 @@ public:
     bool readLine(vector<string>& parsed_line){return true;}
 };
 
+class EndPopWriter: public FinalOutputWriter{
+private:
+    ofstream outfile;
+public:
+    ~EndPopWriter();
+    EndPopWriter(string ofile);
+    void finalAction(CList& clone_list);
+    void beginAction(CList& clone_list){};
+    bool readLine(vector<string>& parsed_line){return true;}
+};
+
 
 #endif /* OutputWriter_h */
