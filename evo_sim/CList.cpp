@@ -99,9 +99,9 @@ void CList::advance()
 {
     uniform_real_distribution<double> runif;
     mut_model->reset();
-    double total_death = d*tot_cell_count;
-    if (death_var){
-        total_death = getTotalDeath();
+    double total_death = getTotalDeath();
+    if (tot_cell_count == 0){
+        tot_rate = 0;
     }
     time += -log(runif(*eng))/(tot_rate + total_death);
     double b_or_d = runif(*eng)*(tot_rate + total_death);
@@ -150,13 +150,18 @@ Clone& CList::chooseReproducer(){
 }
 
 double CList::getTotalDeath(){
-    CellType *curr_type = root;
-    double total_d = 0;
-    while (curr_type){
-        total_d += curr_type->getDeathRate() * curr_type->getNumCells();
-        curr_type = curr_type->getNext();
+    if (death_var){
+        CellType *curr_type = root;
+        double total_d = 0;
+        while (curr_type){
+            total_d += curr_type->getDeathRate() * curr_type->getNumCells();
+            curr_type = curr_type->getNext();
+        }
+        return total_d;
     }
-    return total_d;
+    else{
+        return d*tot_cell_count;
+    }
 }
 
 Clone& CList::chooseDeadVar(double total_death){

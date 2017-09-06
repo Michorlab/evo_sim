@@ -232,6 +232,7 @@ private:
     CList *clone_list;
     bool handle_line(string& line);
     string *outfolder;
+    bool sync_dists;
     
     /* handle a line that started with "sim_param".
      @param parsed_line tokenized line with parameter info. already stripped of "sim_param" keyword. first element should be parameter name to be set.

@@ -64,13 +64,15 @@ void *sim_thread(void *arg){
     }
     infile.close();
     errfile.close();
-    infile.open(infilename);
-    params.refreshSim(infile);
-    infile.close();
+
     
     int sim_num = data->getSimNumberAndAdvance();
     
     while (sim_num <= params.getNumSims()){
+        infile.open(infilename);
+        params.refreshSim(infile);
+        infile.close();
+        
         pthread_mutex_lock(write_lock);
         for (vector<OutputWriter *>::iterator it = writers.begin(); it != writers.end(); ++it){
             (*it)->setSimNumber(sim_num);
@@ -88,9 +90,6 @@ void *sim_thread(void *arg){
             (*it)->finalAction(*clone_list);
         }
         pthread_mutex_unlock(write_lock);
-        infile.open(infilename);
-        params.refreshSim(infile);
-        infile.close();
         
         sim_num = data->getSimNumberAndAdvance();
     }
@@ -353,13 +352,14 @@ SimParams::SimParams(CList& clist, vector<OutputWriter*>& writer_list, Composite
     listeners = &listener;
     has_dist = new vector<int>();
     dists = new vector<vector<int>>();
+    sync_dists = false;
 }
 
 void SimParams::refreshSim(ifstream& infile){
     clone_list->refreshSim();
     string line;
     
-    
+    int num_drawn = -1;
     string tok;
     std::vector<string> parsed_line;
     
@@ -375,10 +375,20 @@ void SimParams::refreshSim(ifstream& infile){
             auto found = std::find(has_dist->begin(), has_dist->end(), index);
             if (found != has_dist->end()){
                 auto new_index = std::distance(has_dist->begin(), found);
-                uniform_real_distribution<double> runif;
-                int ran = floor(runif(*eng) * dists->at(new_index).size());
-                int num_cells = dists->at(new_index).at(ran);
-                parsed_line[2] = to_string(num_cells);
+                if (sync_dists && num_drawn >= 0){
+                    if (num_drawn > dists->at(new_index).size()){
+                        cout << "synched cell count dists don't have same size" << endl;
+                    }
+                    int num_cells = dists->at(new_index).at(num_drawn);
+                    parsed_line[2] = to_string(num_cells);
+                }
+                else{
+                    uniform_real_distribution<double> runif;
+                    int ran = floor(runif(*eng) * dists->at(new_index).size());
+                    int num_cells = dists->at(new_index).at(ran);
+                    num_drawn = ran;
+                    parsed_line[2] = to_string(num_cells);
+                }
             }
             make_clone(parsed_line);
         }
@@ -437,7 +447,11 @@ bool SimParams::handle_line(string& line){
     }
     else if (parsed_line[0] == "init_dist"){
         parsed_line.erase(parsed_line.begin());
-        if (parsed_line.size() != 2){
+        if (parsed_line[0] == "sync"){
+            sync_dists = true;
+            return true;
+        }
+        else if (parsed_line.size() != 2){
             return false;
         }
         has_dist->push_back(stoi(parsed_line[0]));
