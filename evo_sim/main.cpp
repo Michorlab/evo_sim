@@ -72,6 +72,7 @@ void *sim_thread(void *arg){
         infile.open(infilename);
         params.refreshSim(infile);
         infile.close();
+        params.setSimNumber(sim_num);
         
         pthread_mutex_lock(write_lock);
         for (vector<OutputWriter *>::iterator it = writers.begin(); it != writers.end(); ++it){
@@ -347,12 +348,15 @@ SimParams::SimParams(CList& clist, vector<OutputWriter*>& writer_list, Composite
     mut_params = NULL;
     sim_name = "";
     clone_list = &clist;
+    sim_number = 1;
     writers = &writer_list;
     outfolder = &output;
     listeners = &listener;
     has_dist = new vector<int>();
     dists = new vector<vector<int>>();
     sync_dists = false;
+    has_list = false;
+    index_list = new vector<int>();
 }
 
 void SimParams::refreshSim(ifstream& infile){
@@ -375,20 +379,31 @@ void SimParams::refreshSim(ifstream& infile){
             auto found = std::find(has_dist->begin(), has_dist->end(), index);
             if (found != has_dist->end()){
                 auto new_index = std::distance(has_dist->begin(), found);
-                if (sync_dists && num_drawn >= 0){
+                int num_cells = 0;
+                if (has_list){
+                    if (sim_number >= index_list->size()){
+                        cout << "index list too short for specified number of simulations" << endl;
+                    }
+                    int list_index = index_list->at(sim_number-1);
+                    if (list_index < 0 || list_index > dists->at(new_index).size()){
+                        cout << "list contains bad indices" << endl;
+                    }
+                    num_cells = dists->at(new_index).at(list_index);
+                }
+                else if (sync_dists && num_drawn >= 0){
                     if (num_drawn > dists->at(new_index).size()){
                         cout << "synched cell count dists don't have same size" << endl;
                     }
-                    int num_cells = dists->at(new_index).at(num_drawn);
-                    parsed_line[2] = to_string(num_cells);
+                    num_cells = dists->at(new_index).at(num_drawn);
                 }
                 else{
                     uniform_real_distribution<double> runif;
                     int ran = floor(runif(*eng) * dists->at(new_index).size());
-                    int num_cells = dists->at(new_index).at(ran);
+                    num_cells = dists->at(new_index).at(ran);
                     num_drawn = ran;
-                    parsed_line[2] = to_string(num_cells);
+                    
                 }
+                parsed_line[2] = to_string(num_cells);
             }
             make_clone(parsed_line);
         }
@@ -454,11 +469,41 @@ bool SimParams::handle_line(string& line){
         else if (parsed_line.size() != 2){
             return false;
         }
+        else if (parsed_line[0] == "list"){
+            if (has_list){
+                err_type = "two init_dist list lines";
+                return false;
+            }
+            has_list = true;
+            ifstream infile;
+            infile.open(parsed_line[1]);
+            if (!infile.is_open()){
+                err_type = "bad init_dist list file";
+                return false;
+            }
+            string line;
+            while (getline(infile, line)){
+                std::stringstream ss;
+                string tok;
+                ss.str(line);
+                try{
+                    while (getline(ss, tok)){
+                        index_list->push_back(stod(tok));
+                    }
+                }
+                catch(...){
+                    return false;
+                }
+            }
+            return true;
+
+        }
         has_dist->push_back(stoi(parsed_line[0]));
         dists->push_back(*new vector<int>());
         ifstream infile;
         infile.open(parsed_line[1]);
         if (!infile.is_open()){
+            err_type = "bad init_dist file";
             return false;
         }
         string line;

@@ -226,6 +226,7 @@ class SimParams{
      */
 private:
     int num_simulations;
+    int sim_number;
     vector<int> *has_dist;
     vector<vector<int>> *dists;
     MutationHandler *mut_handler;
@@ -233,6 +234,8 @@ private:
     bool handle_line(string& line);
     string *outfolder;
     bool sync_dists;
+    bool has_list;
+    vector<int> *index_list;
     
     /* handle a line that started with "sim_param".
      @param parsed_line tokenized line with parameter info. already stripped of "sim_param" keyword. first element should be parameter name to be set.
@@ -273,6 +276,9 @@ public:
     string getName(){return sim_name;}
     MutationHandler& get_mut_handler(){return *mut_handler;}
     void refreshSim(ifstream& infile);
+    void setSimNumber(int num){
+        sim_number = num;
+    }
 };
 
 #endif /* main_h */
