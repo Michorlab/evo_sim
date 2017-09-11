@@ -30,7 +30,7 @@ protected:
     double birth_rate;
     double mut_prob;
     
-    void addCells(int num_cells);
+    
     virtual bool checkRep(){
         return !(mut_prob < 0 || birth_rate < 0 || cell_count < 0);
     }
@@ -47,6 +47,12 @@ public:
     virtual void reproduce() = 0;
     
     virtual bool readLine(vector<string>& parsed_line) = 0;
+    
+    void addCells(int num_cells);
+    
+    double getMutProb(){
+        return mut_prob;
+    }
     
     double getBirthRate(){
         return birth_rate;

@@ -99,8 +99,14 @@ void SimpleClone::reproduce(){
     if (runif(*eng) < mut_prob){
         MutationHandler& mut_handle = cell_type->getMutHandler();
         mut_handle.generateMutant(*cell_type, birth_rate, mut_prob);
-        SimpleClone *new_node = new SimpleClone(mut_handle.getNewType(), mut_handle.getNewBirthRate(), mut_handle.getNewMutProb(), 1);
-        mut_handle.getNewType().insertClone(*new_node);
+        if (mut_handle.getNewType().getEnd()->getBirthRate()==mut_handle.getNewBirthRate() && mut_handle.getNewType().getEnd()->getMutProb()== mut_handle.getNewMutProb()){
+            mut_handle.getNewType().getEnd()->addCells(1);
+        }
+        else{
+            SimpleClone *new_node = new SimpleClone(mut_handle.getNewType(), mut_handle.getNewBirthRate(), mut_handle.getNewMutProb(), 1);
+            mut_handle.getNewType().insertClone(*new_node);
+        }
+        
     }
     else{
         addCells(1);
