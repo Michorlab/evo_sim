@@ -33,6 +33,7 @@ protected:
     int max_types;
     int num_types;
     bool death_var;
+    bool recalc_birth;
     
     // stores pointers to CellTypes that have been initialized in this simulation run. may include extinct types. no Clones in the simulation should have a CellType not included in this vector.
     std::vector<CellType *> curr_types;
@@ -67,6 +68,7 @@ protected:
         root = &new_root;
     }
     double getTotalDeath();
+    double getTotalBirth();
     
 public:
     CList();

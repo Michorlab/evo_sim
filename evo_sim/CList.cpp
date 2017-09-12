@@ -31,6 +31,7 @@ CList::CList(double death, MutationHandler& mut_handle, int max){
     root = NULL;
     end_node = NULL;
     death_var = false;
+    recalc_birth = false;
 }
 
 CList::CList(){
@@ -43,6 +44,7 @@ CList::CList(){
     mut_model = NULL;
     d = 0;
     death_var = false;
+    recalc_birth = false;
 }
 
 void CList::clearClones(){
@@ -95,6 +97,25 @@ void CList::deleteList()
     
 }
 
+double CList::getTotalBirth(){
+    if (recalc_birth){
+        CellType *rep_type = root;
+        while (rep_type->getNumCells() == 0){
+            rep_type = rep_type->getNext();
+        }
+        Clone *reproducer = rep_type->getRoot();
+        double curr_rate = reproducer->getTotalBirth();
+        while (reproducer->getNextClone()){
+            reproducer = reproducer->getNextClone();
+            curr_rate += reproducer->getTotalBirth();
+        }
+        return curr_rate;
+    }
+    else{
+        return tot_rate;
+    }
+}
+
 void CList::advance()
 {
     uniform_real_distribution<double> runif;
@@ -103,8 +124,9 @@ void CList::advance()
     if (tot_cell_count == 0){
         tot_rate = 0;
     }
-    time += -log(runif(*eng))/(tot_rate + total_death);
-    double b_or_d = runif(*eng)*(tot_rate + total_death);
+    double tot_birth = getTotalBirth();
+    time += -log(runif(*eng))/(tot_birth + total_death);
+    double b_or_d = runif(*eng)*(tot_birth + total_death);
     if (b_or_d < (total_death)){
         if (death_var){
              Clone& dead = chooseDeadVar(total_death);
@@ -135,7 +157,7 @@ void CList::advance()
 Clone& CList::chooseReproducer(){
     uniform_real_distribution<double> runif;
     
-    double ran = runif(*eng) * tot_rate;
+    double ran = runif(*eng) * getTotalBirth();
     CellType *rep_type = root;
     while (rep_type->getNumCells() == 0){
         rep_type = rep_type->getNext();
@@ -235,6 +257,9 @@ void CList::walkTypesAndWrite(ofstream& outfile, CellType& root){
 bool CList::handle_line(vector<string>& parsed_line){
     if (parsed_line[0] == "death"){
         d =stod(parsed_line[1]);
+    }
+    else if (parsed_line[0] == "recalc_birth"){
+        recalc_birth = true;
     }
     else if(parsed_line[0] == "max_types"){
         max_types =stoi(parsed_line[1]) + 1;

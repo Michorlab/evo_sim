@@ -45,7 +45,13 @@ Clone* Clone::getNextClone(){
             return NULL;
         }
         else{
-            return (cell_type->getNext())->getRoot();
+            CellType* next_type = cell_type->getNext();
+            Clone* next_clone = next_type->getRoot();
+            while (next_type && !next_clone){
+                next_type = next_type->getNext();
+                next_clone = next_type->getRoot();
+            }
+            return next_clone;
         }
     }
     return next_node;
@@ -99,7 +105,7 @@ void SimpleClone::reproduce(){
     if (runif(*eng) < mut_prob){
         MutationHandler& mut_handle = cell_type->getMutHandler();
         mut_handle.generateMutant(*cell_type, birth_rate, mut_prob);
-        if (mut_handle.getNewType().getEnd()->getBirthRate()==mut_handle.getNewBirthRate() && mut_handle.getNewType().getEnd()->getMutProb()== mut_handle.getNewMutProb()){
+        if (mut_handle.getNewType().getEnd() && mut_handle.getNewType().getEnd()->getBirthRate()==mut_handle.getNewBirthRate() && mut_handle.getNewType().getEnd()->getMutProb()== mut_handle.getNewMutProb()){
             mut_handle.getNewType().getEnd()->addCells(1);
         }
         else{
