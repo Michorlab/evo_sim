@@ -93,7 +93,20 @@ public:
     }
     
     CellType* getTypeByIndex(int i){
-        return curr_types[i];
+        return curr_types.at(i);
+    }
+    
+    bool hasCellType(int i){
+        try{
+            CellType* test = curr_types.at(i);
+            if (!test){
+                return false;
+            }
+        }
+        catch (std::out_of_range){
+            return false;
+        }
+        return true;
     }
     
     double getCurrTime(){

@@ -141,7 +141,9 @@ void CellCountWriter::beginAction(CList& clone_list){
     string ofile_middle = "count_sim_"+to_string(sim_number);
     outfile.open(ofile_loc + ofile_middle + ofile_name, ios::app);
     outfile << "data for cell type " << index << " sim number " << sim_number << endl;
-    outfile << clone_list.getCurrTime() << ", " << clone_list.getTypeByIndex(index)->getNumCells() << endl;
+    if (clone_list.hasCellType(index)){
+        outfile << clone_list.getCurrTime() << ", " << clone_list.getTypeByIndex(index)->getNumCells() << endl;
+    }
 }
 
 void NumMutationsWriter::beginAction(CList& clone_list){
@@ -180,7 +182,7 @@ void CountStepWriter::duringSimAction(CList& clone_list){
 }
 
 void CellCountWriter::duringSimAction(CList& clone_list){
-    if (shouldWrite(clone_list) && clone_list.getTypeByIndex(index)->getNumCells() > 0){
+    if (shouldWrite(clone_list) && clone_list.hasCellType(index) && clone_list.getTypeByIndex(index)->getNumCells() > 0){
         outfile << clone_list.getCurrTime() << ", " << clone_list.getTypeByIndex(index)->getNumCells() << endl;
     }
 }
@@ -193,7 +195,12 @@ void NumMutationsWriter::duringSimAction(CList& clone_list){
 }
 
 void CellCountWriter::finalAction(CList& clone_list){
-    outfile << clone_list.getCurrTime() << ", " << clone_list.getTypeByIndex(index)->getNumCells() << endl;
+    if (clone_list.hasCellType(index)){
+        outfile << clone_list.getCurrTime() << ", " << clone_list.getTypeByIndex(index)->getNumCells() << endl;
+    }
+    else{
+        outfile << clone_list.getCurrTime() << ", " << 0 << endl;
+    }
     outfile.flush();
     outfile.close();
     sim_number++;
