@@ -147,6 +147,10 @@ public:
     long long getNumCells(){return tot_cell_count;}
     
     bool isOneType();
+    
+    int getMaxTypes(){
+        return max_types - 1;
+    }
 };
 
 class MoranPop: public CList{

@@ -491,3 +491,72 @@ void FitnessDistWriter::finalAction(CList& clone_list){
     outfile.close();
     sim_number++;
 }
+
+NewMutantWriter::NewMutantWriter(string ofile): DuringOutputWriter(ofile){
+    has_mutant = false;
+}
+
+bool NewMutantWriter::readLine(vector<string>& parsed_line){
+    if (parsed_line.size() != 1){
+        return false;
+    }
+    try{
+        index =stoi(parsed_line[0]);
+    }
+    catch (...){
+        return false;
+    }
+    ofile_name = "new_mutant_" + to_string(index) + ".oevo";
+    return true;
+}
+
+NewMutantWriter::~NewMutantWriter(){
+    outfile.flush();
+    outfile.close();
+}
+
+void NewMutantWriter::beginAction(CList& clone_list){
+    outfile.open(ofile_loc + ofile_name, ios::app);
+    if (clone_list.hasCellType(index) && clone_list.getTypeByIndex(index)->getNumCells() > 0){
+        has_mutant = true;
+    }
+}
+
+void NewMutantWriter::finalAction(CList &clone_list){
+    for (vector<string>::iterator it = to_write.begin(); it != to_write.end(); ++it){
+        outfile << (*it) << endl;
+    }
+    outfile.flush();
+    outfile.close();
+}
+
+void NewMutantWriter::duringSimAction(CList &clone_list){
+    if (clone_list.hasCellType(index) && clone_list.getTypeByIndex(index) && clone_list.getTypeByIndex(index)->getNumCells() > 0){
+        if (clone_list.getMutHandler().has_mut()){
+            string new_line = to_string(sim_number) + ", " + to_string(clone_list.getCurrTime());
+            for (int i=0; i<clone_list.getMaxTypes(); i++){
+                if (clone_list.hasCellType(i) && clone_list.getTypeByIndex(i)){
+                    new_line += ", " + to_string(clone_list.getTypeByIndex(i)->getBirthRate()/clone_list.getTypeByIndex(i)->getNumCells());
+                }
+                else{
+                    new_line += ", NA";
+                }
+            }
+            if (has_mutant){
+                string prev = to_write.back();
+                prev.pop_back();
+                prev += to_string(1);
+                to_write.push_back(prev);
+                new_line += ", 1";
+            }
+            else{
+                new_line += ", 0";
+            }
+            to_write.push_back(new_line);
+            has_mutant = true;
+        }
+    }
+    else{
+        has_mutant = false;
+    }
+}

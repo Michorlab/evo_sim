@@ -234,5 +234,19 @@ public:
     bool readLine(vector<string>& parsed_line){return true;}
 };
 
+class NewMutantWriter: public DuringOutputWriter{
+private:
+    ofstream outfile;
+    int index;
+    bool has_mutant;
+    vector<string> to_write;
+public:
+    ~NewMutantWriter();
+    NewMutantWriter(string ofile);
+    void finalAction(CList& clone_list);
+    void beginAction(CList& clone_list);
+    void duringSimAction(CList& clone_list);
+    bool readLine(vector<string>& parsed_line);
+};
 
 #endif /* OutputWriter_h */

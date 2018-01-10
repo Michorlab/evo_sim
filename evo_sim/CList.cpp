@@ -291,6 +291,7 @@ int CList::newestType(){
 }
 
 void MoranPop::advance(){
+    mut_model->reset();
     Clone& dead = chooseDead();
     if (dead.isSingleCell()){
         delete &dead;

@@ -634,6 +634,9 @@ bool SimParams::make_writer(vector<string> &parsed_line){
     else if (type == "MeanFit"){
         new_writer = new MeanFitWriter(*outfolder);
     }
+    else if (type == "NewMutant"){
+        new_writer = new NewMutantWriter(*outfolder);
+    }
     else if (type == "EndTime"){
         new_writer = new EndTimeWriter(*outfolder);
     }
