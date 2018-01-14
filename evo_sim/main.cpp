@@ -54,7 +54,7 @@ void *sim_thread(void *arg){
         pthread_exit(NULL);
     }
     CompositeListener end_conditions;
-    SimParams params(*clone_list, writers, end_conditions, outfolder);
+    SimParams params(*clone_list, writers, end_conditions, outfolder, model_type);
     if (!params.read(infile)){
         params.writeErrors(errfile);
         cout << "bad input file: check error file." << endl;
@@ -339,7 +339,7 @@ CompositeListener::~CompositeListener(){
 
 //--------------SimParams-----------
 
-SimParams::SimParams(CList& clist, vector<OutputWriter*>& writer_list, CompositeListener& listener, string& output){
+SimParams::SimParams(CList& clist, vector<OutputWriter*>& writer_list, CompositeListener& listener, string& output, string& sim_type){
     num_simulations = 0;
     mut_handler = NULL;
     err_type = "";
@@ -357,6 +357,7 @@ SimParams::SimParams(CList& clist, vector<OutputWriter*>& writer_list, Composite
     sync_dists = false;
     has_list = false;
     index_list = new vector<int>();
+    model_type = &sim_type;
 }
 
 void SimParams::refreshSim(ifstream& infile){
@@ -702,7 +703,12 @@ bool SimParams::make_clone(vector<string> &parsed_line){
         }
         TypeSpecificClone *new_clone;
         for (int i=0; i<num_cells; i++){
-            new_clone = new TypeSpecificClone(*new_type);
+            if (*model_type == "moran"){
+                new_clone = new TypeSpecificClone(*new_type, true);
+            }
+            else{
+                new_clone = new TypeSpecificClone(*new_type, false);
+            }
             if (!new_clone->readLine(parsed_line)){
                 return false;
             }
@@ -717,7 +723,12 @@ bool SimParams::make_clone(vector<string> &parsed_line){
         Clone *new_clone;
         for (int i=0; i<num_cells; i++){
             
-            new_clone = new HeritableClone(*new_type);
+            if (*model_type == "moran"){
+                new_clone = new HeritableClone(*new_type, true);
+            }
+            else{
+                new_clone = new HeritableClone(*new_type, false);
+            }
             if (!new_clone->readLine(parsed_line)){
                 err_type = "bad clone";
                 return false;
@@ -732,8 +743,12 @@ bool SimParams::make_clone(vector<string> &parsed_line){
         }
         Clone *new_clone;
         for (int i=0; i<num_cells; i++){
-            
-            new_clone = new HerEmpiricClone(*new_type);
+            if (*model_type == "moran"){
+                new_clone = new HerEmpiricClone(*new_type, true);
+            }
+            else{
+                new_clone = new HerEmpiricClone(*new_type, false);
+            }
             if (!new_clone->readLine(parsed_line)){
                 err_type = "bad clone";
                 return false;
@@ -748,8 +763,13 @@ bool SimParams::make_clone(vector<string> &parsed_line){
         }
         Clone *new_clone;
         for (int i=0; i<num_cells; i++){
+            if (*model_type == "moran"){
+                new_clone = new TypeEmpiricClone(*new_type, true);
+            }
+            else{
+                new_clone = new TypeEmpiricClone(*new_type, false);
+            }
             
-            new_clone = new TypeEmpiricClone(*new_type);
             if (!new_clone->readLine(parsed_line)){
                 err_type = "bad clone";
                 return false;

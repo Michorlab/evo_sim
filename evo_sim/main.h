@@ -225,6 +225,7 @@ class SimParams{
      also initializes key simulation objects (CList and Clones) as appropriate.
      */
 private:
+    string *model_type;
     int num_simulations;
     int sim_number;
     vector<int> *has_dist;
@@ -263,7 +264,7 @@ private:
 
 public:
     // initial clone list and writer list should be empty, read method will fill it.
-    SimParams(CList& clist, vector<OutputWriter*>& writer_list, CompositeListener& listener, string& output);
+    SimParams(CList& clist, vector<OutputWriter*>& writer_list, CompositeListener& listener, string& output, string& sim_type);
     
     /* reads an input file and loads parameters
      MUTATES clone_list, makes new Clones

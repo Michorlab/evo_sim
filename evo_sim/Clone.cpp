@@ -76,26 +76,28 @@ Clone::Clone(CellType& type){
 
 SimpleClone::SimpleClone(CellType& type) : Clone(type){};
 
-StochClone::StochClone(CellType& type) : Clone(type){};
+StochClone::StochClone(CellType& type, bool mult) : Clone(type){
+    is_mult = mult;
+};
 
-EmpiricalClone::EmpiricalClone(CellType& type) : StochClone(type){};
+EmpiricalClone::EmpiricalClone(CellType& type, bool mult) : StochClone(type, mult){};
 
-TypeSpecificClone::TypeSpecificClone(CellType& type) : StochClone(type){
+TypeSpecificClone::TypeSpecificClone(CellType& type, bool mult) : StochClone(type, mult){
     mean = 0;
     var = 0;
 }
 
-HeritableClone::HeritableClone(CellType& type) : StochClone(type){
+HeritableClone::HeritableClone(CellType& type, bool mult) : StochClone(type, mult){
     mean = 0;
     var = 0;
 }
 
-TypeEmpiricClone::TypeEmpiricClone(CellType& type) : EmpiricalClone(type){
+TypeEmpiricClone::TypeEmpiricClone(CellType& type, bool mult) : EmpiricalClone(type, mult){
     mean = 0;
     var = 0;
 }
 
-HerEmpiricClone::HerEmpiricClone(CellType& type) : EmpiricalClone(type){
+HerEmpiricClone::HerEmpiricClone(CellType& type, bool mult) : EmpiricalClone(type, mult){
     mean = 0;
     var = 0;
 }
@@ -127,63 +129,85 @@ Clone::Clone(CellType& type, double mut){
     prev_node = NULL;
 }
 
-StochClone::StochClone(CellType& type, double mut) : Clone(type, mut){}
+StochClone::StochClone(CellType& type, double mut, bool mult) : Clone(type, mut){
+    is_mult = mult;
+}
 
-EmpiricalClone::EmpiricalClone(CellType& type, double mut) : StochClone(type, mut){};
+EmpiricalClone::EmpiricalClone(CellType& type, double mut, bool mult) : StochClone(type, mut, mult){};
 
-HeritableClone::HeritableClone(CellType& type, double mu, double sig, double mut) : StochClone(type, mut){
+HeritableClone::HeritableClone(CellType& type, double mu, double sig, double mut, bool mult) : StochClone(type, mut, mult){
     mean = mu;
     var = sig;
-    birth_rate = drawLogNorm(mean, var);
+    setNewBirth(mean, var);
     cell_count = 1;
 }
 
-HerEmpiricClone::HerEmpiricClone(CellType& type, double mu, double sig, double mut) : EmpiricalClone(type, mut){
+HerEmpiricClone::HerEmpiricClone(CellType& type, double mu, double sig, double mut, bool mult) : EmpiricalClone(type, mut, mult){
     mean = mu;
     var = sig;
-    birth_rate = drawEmpirical(mean, var);
+    setNewBirth(mean, var);
     cell_count = 1;
 }
 
-HeritableClone::HeritableClone(CellType& type, double mu, double sig, double mut, double offset) : StochClone(type, mut){
+HeritableClone::HeritableClone(CellType& type, double mu, double sig, double mut, double offset, bool mult) : StochClone(type, mut, mult){
     mean = mu;
     var = sig;
-    birth_rate = offset + mean;
+    if (is_mult){
+        birth_rate = offset * mean;
+    }
+    else{
+        birth_rate = offset + mean;
+    }
     cell_count = 1;
 }
 
-HerEmpiricClone::HerEmpiricClone(CellType& type, double mu, double sig, double mut, double offset) : EmpiricalClone(type, mut){
+HerEmpiricClone::HerEmpiricClone(CellType& type, double mu, double sig, double mut, double offset, bool mult) : EmpiricalClone(type, mut, mult){
     mean = mu;
     var = sig;
-    birth_rate = offset + mean;
+    if (is_mult){
+        birth_rate = offset * mean;
+    }
+    else{
+        birth_rate = offset + mean;
+    }
     cell_count = 1;
 }
 
-TypeSpecificClone::TypeSpecificClone(CellType& type, double mu, double sig, double mut) : StochClone(type, mut){
+TypeSpecificClone::TypeSpecificClone(CellType& type, double mu, double sig, double mut, bool mult) : StochClone(type, mut, mult){
     mean = mu;
     var = sig;
-    birth_rate = drawLogNorm(mean, var);
+    setNewBirth(mean, var);
     cell_count = 1;
 }
 
-TypeEmpiricClone::TypeEmpiricClone(CellType& type, double mu, double sig, double mut) : EmpiricalClone(type, mut){
+TypeEmpiricClone::TypeEmpiricClone(CellType& type, double mu, double sig, double mut, bool mult) : EmpiricalClone(type, mut, mult){
     mean = mu;
     var = sig;
-    birth_rate = drawEmpirical(mean, var);
+    setNewBirth(mean, var);
     cell_count = 1;
 }
 
-TypeSpecificClone::TypeSpecificClone(CellType& type, double mu, double sig, double mut, double offset) : StochClone(type, mut){
+TypeSpecificClone::TypeSpecificClone(CellType& type, double mu, double sig, double mut, double offset, bool mult) : StochClone(type, mut, mult){
     mean = mu;
     var = sig;
-    birth_rate = offset + mean;
+    if (is_mult){
+        birth_rate = offset * mean;
+    }
+    else{
+        birth_rate = offset + mean;
+    }
     cell_count = 1;
 }
 
-TypeEmpiricClone::TypeEmpiricClone(CellType& type, double mu, double sig, double mut, double offset) : EmpiricalClone(type, mut){
+TypeEmpiricClone::TypeEmpiricClone(CellType& type, double mu, double sig, double mut, double offset, bool mult) : EmpiricalClone(type, mut, mult){
     mean = mu;
     var = sig;
-    birth_rate = offset + mean;
+    if (is_mult){
+        birth_rate = offset * mean;
+    }
+    else{
+        birth_rate = offset + mean;
+    }
     cell_count = 1;
 }
 
@@ -209,19 +233,44 @@ void TypeSpecificClone::reproduce(){
         removeOneCell();
         MutationHandler& mut_handle = cell_type->getMutHandler();
         mut_handle.generateMutant(*cell_type, mean, mut_prob);
-        birth_rate = drawLogNorm(mean, var);
-        double offset = birth_rate - mean;
-        TypeSpecificClone *new_node = new TypeSpecificClone(mut_handle.getNewType(), mut_handle.getNewBirthRate(), var, mut_handle.getNewMutProb(), offset);
+        double offset = setNewBirth(mean, var);
+        TypeSpecificClone *new_node = new TypeSpecificClone(mut_handle.getNewType(), mut_handle.getNewBirthRate(), var, mut_handle.getNewMutProb(), offset, is_mult);
         mut_handle.getNewType().insertClone(*new_node);
         addCells(1);
     }
     else{
-        TypeSpecificClone *new_node = new TypeSpecificClone(*cell_type, mean, var, mut_prob);
+        TypeSpecificClone *new_node = new TypeSpecificClone(*cell_type, mean, var, mut_prob, is_mult);
         removeOneCell();
         birth_rate = new_node->getBirthRate();
         cell_type->insertClone(*new_node);
         addCells(1);
     }
+}
+
+double TypeSpecificClone::setNewBirth(double mean, double var){
+    double offset = 0;
+    if (is_mult){
+        offset = drawLogNorm(1, var);
+        birth_rate = offset * mean;
+    }
+    else{
+        offset = drawLogNorm(0, var);
+        birth_rate = offset + mean;
+    }
+    return offset;
+}
+
+double TypeEmpiricClone::setNewBirth(double mean, double var){
+    double offset = 0;
+    if (is_mult){
+        offset = drawEmpirical(1, var);
+        birth_rate = offset * mean;
+    }
+    else{
+        offset = drawEmpirical(0, var);
+        birth_rate = offset + mean;
+    }
+    return offset;
 }
 
 void TypeEmpiricClone::reproduce(){
@@ -230,14 +279,13 @@ void TypeEmpiricClone::reproduce(){
         removeOneCell();
         MutationHandler& mut_handle = cell_type->getMutHandler();
         mut_handle.generateMutant(*cell_type, mean, mut_prob);
-        birth_rate = drawEmpirical(mean, var);
-        double offset = birth_rate - mean;
-        TypeEmpiricClone *new_node = new TypeEmpiricClone(mut_handle.getNewType(), mut_handle.getNewBirthRate(), var, mut_handle.getNewMutProb(), offset);
+        double offset = setNewBirth(mean, var);
+        TypeEmpiricClone *new_node = new TypeEmpiricClone(mut_handle.getNewType(), mut_handle.getNewBirthRate(), var, mut_handle.getNewMutProb(), offset, is_mult);
         mut_handle.getNewType().insertClone(*new_node);
         addCells(1);
     }
     else{
-        TypeEmpiricClone *new_node = new TypeEmpiricClone(*cell_type, mean, var, mut_prob);
+        TypeEmpiricClone *new_node = new TypeEmpiricClone(*cell_type, mean, var, mut_prob, is_mult);
         removeOneCell();
         birth_rate = new_node->getBirthRate();
         cell_type->insertClone(*new_node);
@@ -251,19 +299,44 @@ void HeritableClone::reproduce(){
         MutationHandler& mut_handle = cell_type->getMutHandler();
         mut_handle.generateMutant(*cell_type, birth_rate, mut_prob);
         removeOneCell();
-        birth_rate = drawLogNorm(mean, var);
-        double offset = birth_rate - mean;
-        HeritableClone *new_node = new HeritableClone(mut_handle.getNewType(), mut_handle.getNewBirthRate(), var, mut_handle.getNewMutProb(), offset);
+        double offset = setNewBirth(mean, var);
+        HeritableClone *new_node = new HeritableClone(mut_handle.getNewType(), mut_handle.getNewBirthRate(), var, mut_handle.getNewMutProb(), offset, is_mult);
         mut_handle.getNewType().insertClone(*new_node);
         addCells(1);
     }
     else{
         removeOneCell();
-        HeritableClone *new_node = new HeritableClone(*cell_type, birth_rate, var, mut_prob);
+        HeritableClone *new_node = new HeritableClone(*cell_type, birth_rate, var, mut_prob, is_mult);
         birth_rate = new_node->getBirthRate();
         addCells(1);
         cell_type->insertClone(*new_node);
     }
+}
+
+double HeritableClone::setNewBirth(double mean, double var){
+    double offset = 0;
+    if (is_mult){
+        offset = drawLogNorm(1, var);
+        birth_rate = offset * mean;
+    }
+    else{
+        offset = drawLogNorm(0, var);
+        birth_rate = offset + mean;
+    }
+    return offset;
+}
+
+double HerEmpiricClone::setNewBirth(double mean, double var){
+    double offset = 0;
+    if (is_mult){
+        offset = drawEmpirical(1, var);
+        birth_rate = offset * mean;
+    }
+    else{
+        offset = drawEmpirical(0, var);
+        birth_rate = offset + mean;
+    }
+    return offset;
 }
 
 void HerEmpiricClone::reproduce(){
@@ -272,15 +345,14 @@ void HerEmpiricClone::reproduce(){
         MutationHandler& mut_handle = cell_type->getMutHandler();
         mut_handle.generateMutant(*cell_type, birth_rate, mut_prob);
         removeOneCell();
-        birth_rate = drawEmpirical(mean, var);
-        double offset = birth_rate - mean;
-        HerEmpiricClone *new_node = new HerEmpiricClone(mut_handle.getNewType(), mut_handle.getNewBirthRate(), var, mut_handle.getNewMutProb(), offset);
+        double offset = setNewBirth(mean, var);
+        HerEmpiricClone *new_node = new HerEmpiricClone(mut_handle.getNewType(), mut_handle.getNewBirthRate(), var, mut_handle.getNewMutProb(), offset, is_mult);
         mut_handle.getNewType().insertClone(*new_node);
         addCells(1);
     }
     else{
         removeOneCell();
-        HerEmpiricClone *new_node = new HerEmpiricClone(*cell_type, birth_rate, var, mut_prob);
+        HerEmpiricClone *new_node = new HerEmpiricClone(*cell_type, birth_rate, var, mut_prob, is_mult);
         birth_rate = new_node->getBirthRate();
         addCells(1);
         cell_type->insertClone(*new_node);
