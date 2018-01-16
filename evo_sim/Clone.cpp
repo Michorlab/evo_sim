@@ -317,11 +317,11 @@ double HeritableClone::setNewBirth(double mean, double var){
     double offset = 0;
     if (is_mult){
         offset = drawLogNorm(1, var);
-        birth_rate = offset * mean;
+        birth_rate = offset * birth_rate;
     }
     else{
         offset = drawLogNorm(0, var);
-        birth_rate = offset + mean;
+        birth_rate = offset + birth_rate;
     }
     return offset;
 }
@@ -330,11 +330,11 @@ double HerEmpiricClone::setNewBirth(double mean, double var){
     double offset = 0;
     if (is_mult){
         offset = drawEmpirical(1, var);
-        birth_rate = offset * mean;
+        birth_rate = offset * birth_rate;
     }
     else{
         offset = drawEmpirical(0, var);
-        birth_rate = offset + mean;
+        birth_rate = offset + birth_rate;
     }
     return offset;
 }
