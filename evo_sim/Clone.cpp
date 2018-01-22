@@ -152,24 +152,14 @@ HerEmpiricClone::HerEmpiricClone(CellType& type, double mu, double sig, double m
 HeritableClone::HeritableClone(CellType& type, double mu, double sig, double mut, double offset, bool mult) : StochClone(type, mut, mult){
     mean = mu;
     var = sig;
-    if (is_mult){
-        birth_rate = offset * mean;
-    }
-    else{
-        birth_rate = offset + mean;
-    }
+    birth_rate = mean * offset;
     cell_count = 1;
 }
 
 HerEmpiricClone::HerEmpiricClone(CellType& type, double mu, double sig, double mut, double offset, bool mult) : EmpiricalClone(type, mut, mult){
     mean = mu;
     var = sig;
-    if (is_mult){
-        birth_rate = offset * mean;
-    }
-    else{
-        birth_rate = offset + mean;
-    }
+    birth_rate = mean * offset;
     cell_count = 1;
 }
 
@@ -190,24 +180,14 @@ TypeEmpiricClone::TypeEmpiricClone(CellType& type, double mu, double sig, double
 TypeSpecificClone::TypeSpecificClone(CellType& type, double mu, double sig, double mut, double offset, bool mult) : StochClone(type, mut, mult){
     mean = mu;
     var = sig;
-    if (is_mult){
-        birth_rate = offset * mean;
-    }
-    else{
-        birth_rate = offset + mean;
-    }
+    birth_rate = mean * offset;
     cell_count = 1;
 }
 
 TypeEmpiricClone::TypeEmpiricClone(CellType& type, double mu, double sig, double mut, double offset, bool mult) : EmpiricalClone(type, mut, mult){
     mean = mu;
     var = sig;
-    if (is_mult){
-        birth_rate = offset * mean;
-    }
-    else{
-        birth_rate = offset + mean;
-    }
+    birth_rate = mean * offset;
     cell_count = 1;
 }
 
@@ -251,10 +231,16 @@ double TypeSpecificClone::setNewBirth(double mean, double var){
     double offset = 0;
     if (is_mult){
         offset = drawLogNorm(1, var);
+        if (offset < 0){
+            offset = 0;
+        }
         birth_rate = offset * mean;
     }
     else{
         offset = drawLogNorm(0, var);
+        if (birth_rate + offset < 0){
+            offset = -birth_rate;
+        }
         birth_rate = offset + mean;
     }
     return offset;
@@ -264,10 +250,16 @@ double TypeEmpiricClone::setNewBirth(double mean, double var){
     double offset = 0;
     if (is_mult){
         offset = drawEmpirical(1, var);
+        if (offset < 0){
+            offset = 0;
+        }
         birth_rate = offset * mean;
     }
     else{
         offset = drawEmpirical(0, var);
+        if (birth_rate + offset < 0){
+            offset = -birth_rate;
+        }
         birth_rate = offset + mean;
     }
     return offset;
@@ -299,7 +291,7 @@ void HeritableClone::reproduce(){
         MutationHandler& mut_handle = cell_type->getMutHandler();
         mut_handle.generateMutant(*cell_type, birth_rate, mut_prob);
         removeOneCell();
-        double offset = setNewBirth(mean, var);
+        double offset = setNewBirth(birth_rate, var);
         HeritableClone *new_node = new HeritableClone(mut_handle.getNewType(), mut_handle.getNewBirthRate(), var, mut_handle.getNewMutProb(), offset, is_mult);
         mut_handle.getNewType().insertClone(*new_node);
         addCells(1);
@@ -317,11 +309,17 @@ double HeritableClone::setNewBirth(double mean, double var){
     double offset = 0;
     if (is_mult){
         offset = drawLogNorm(1, var);
-        birth_rate = offset * birth_rate;
+        if (offset < 0){
+            offset = 0;
+        }
+        birth_rate = offset * mean;
     }
     else{
         offset = drawLogNorm(0, var);
-        birth_rate = offset + birth_rate;
+        if (birth_rate + offset < 0){
+            offset = -birth_rate;
+        }
+        birth_rate = offset + mean;
     }
     return offset;
 }
@@ -330,11 +328,17 @@ double HerEmpiricClone::setNewBirth(double mean, double var){
     double offset = 0;
     if (is_mult){
         offset = drawEmpirical(1, var);
-        birth_rate = offset * birth_rate;
+        if (offset < 0){
+            offset = 0;
+        }
+        birth_rate = offset * mean;
     }
     else{
         offset = drawEmpirical(0, var);
-        birth_rate = offset + birth_rate;
+        if (birth_rate + offset < 0){
+            offset = -birth_rate;
+        }
+        birth_rate = offset + mean;
     }
     return offset;
 }
@@ -345,7 +349,7 @@ void HerEmpiricClone::reproduce(){
         MutationHandler& mut_handle = cell_type->getMutHandler();
         mut_handle.generateMutant(*cell_type, birth_rate, mut_prob);
         removeOneCell();
-        double offset = setNewBirth(mean, var);
+        double offset = setNewBirth(birth_rate, var);
         HerEmpiricClone *new_node = new HerEmpiricClone(mut_handle.getNewType(), mut_handle.getNewBirthRate(), var, mut_handle.getNewMutProb(), offset, is_mult);
         mut_handle.getNewType().insertClone(*new_node);
         addCells(1);
