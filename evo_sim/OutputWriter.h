@@ -55,6 +55,9 @@ protected:
     int writing_period;
     int last_written;
     bool shouldWrite(CList& clone_list);
+    void resetWriter(){
+        last_written = 0;
+    };
 public:
     DuringOutputWriter(string ofile, int period);
     DuringOutputWriter(string ofile);

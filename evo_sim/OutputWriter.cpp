@@ -203,7 +203,7 @@ void CellCountWriter::finalAction(CList& clone_list){
     }
     outfile.flush();
     outfile.close();
-    sim_number++;
+    resetWriter();
 }
 
 void CountStepWriter::finalAction(CList& clone_list){
@@ -297,7 +297,7 @@ void AllTypesWriter::finalAction(CList& clone_list){
         (*it)->finalAction(clone_list);
     }
     writers.clear();
-    sim_number++;
+    resetWriter();
 }
 
 bool AllTypesWriter::readLine(vector<string>& parsed_line){
@@ -371,7 +371,6 @@ void IfType2Writer::finalAction(CList& clone_list){
     is_2 = is_2 && (clone_list.getTypeByIndex(2)->getNumCells() == clone_list.getNumCells());
     outfile << sim_number << ", " << is_2 << endl;
     outfile.flush();
-    sim_number++;
 }
 
 IfType2Writer::~IfType2Writer(){
@@ -483,13 +482,13 @@ void MeanFitWriter::finalAction(CList& clone_list){
     outfile << clone_list.getCurrTime() << ", ";
     outfile.flush();
     outfile.close();
-    sim_number++;
+    resetWriter();
 }
 
 void FitnessDistWriter::finalAction(CList& clone_list){
     outfile.flush();
     outfile.close();
-    sim_number++;
+    resetWriter();
 }
 
 NewMutantWriter::NewMutantWriter(string ofile): DuringOutputWriter(ofile){
