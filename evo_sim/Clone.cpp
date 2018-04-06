@@ -11,6 +11,7 @@
 #include "main.h"
 #include <random>
 #include <vector>
+#include <queue>
 #include <chrono>
 #include <cstdlib>
 #include <sstream>
@@ -92,6 +93,11 @@ HeritableClone::HeritableClone(CellType& type, bool mult) : StochClone(type, mul
     var = 0;
 }
 
+HerResetClone::HerResetClone(CellType& type, bool mult) : HeritableClone(type, mult){
+    num_gen_persist = 0;
+    active_diff = queue<double>();
+}
+
 TypeEmpiricClone::TypeEmpiricClone(CellType& type, bool mult) : EmpiricalClone(type, mult){
     mean = 0;
     var = 0;
@@ -154,6 +160,27 @@ HeritableClone::HeritableClone(CellType& type, double mu, double sig, double mut
     var = sig;
     birth_rate = mean * offset;
     cell_count = 1;
+}
+
+HerResetClone::HerResetClone(CellType& type, double mu, double sig, double mut, double offset, bool mult, int num_gen, queue<double>& diffs) : HeritableClone(type, mu, sig, mut, offset, mult){
+    num_gen_persist = num_gen;
+    active_diff = queue<double>(diffs);
+    if (!HerResetClone::checkRep()){
+        throw "mismanaged reset queue";
+    }
+}
+
+HerResetClone::HerResetClone(CellType& type, double mu, double sig, double mut, bool mult, int num_gen, queue<double>& diffs) : HeritableClone(type, mult){
+    mean = mu;
+    var = sig;
+    mut_prob = mut;
+    birth_rate = mu;
+    num_gen_persist = num_gen;
+    active_diff = queue<double>(diffs);
+    cell_count = 1;
+    if (!HerResetClone::checkRep()){
+        throw "mismanaged reset queue";
+    }
 }
 
 HerEmpiricClone::HerEmpiricClone(CellType& type, double mu, double sig, double mut, double offset, bool mult) : EmpiricalClone(type, mut, mult){
@@ -305,6 +332,39 @@ void HeritableClone::reproduce(){
     }
 }
 
+double HerResetClone::reset(){
+    double to_remove = active_diff.front();
+    removeOneCell();
+    if (is_mult){
+        birth_rate = birth_rate/to_remove;
+    }
+    else{
+        birth_rate = birth_rate - to_remove;
+    }
+    active_diff.pop();
+    double offset = setNewBirth(birth_rate, var);
+    active_diff.push(offset);
+    return offset;
+}
+
+void HerResetClone::reproduce(){
+    uniform_real_distribution<double> runif;
+    if (runif(*eng) < mut_prob){
+        MutationHandler& mut_handle = cell_type->getMutHandler();
+        double offset = reset();
+        mut_handle.generateMutant(*cell_type, birth_rate, mut_prob);
+        HerResetClone *new_node = new HerResetClone(mut_handle.getNewType(), mut_handle.getNewBirthRate(), var, mut_handle.getNewMutProb(), offset, is_mult, num_gen_persist, active_diff);
+        mut_handle.getNewType().insertClone(*new_node);
+        addCells(1);
+    }
+    else{
+        reset();
+        HerResetClone *new_node = new HerResetClone(*cell_type, birth_rate, var, mut_prob, is_mult, num_gen_persist, active_diff);
+        addCells(1);
+        cell_type->insertClone(*new_node);
+    }
+}
+
 double HeritableClone::setNewBirth(double mean, double var){
     double offset = 0;
     if (is_mult){
@@ -438,9 +498,35 @@ bool HeritableClone::readLine(vector<string>& parsed_line){
         double death = stod(parsed_line[4]);
         cell_type->setDeathRate(death);
     }
-    birth_rate = drawLogNorm(mean, var);
+    setNewBirth(mean, var);
     return checkRep();
 }
+
+bool HerResetClone::readLine(vector<string>& parsed_line){
+    //full line syntax: Clone HerResetClone [type_id] [num_cells] [mean] [var] [mut_rate] [num_gen]
+    cell_count = 1;
+    try{
+        mean =stod(parsed_line[1]);
+        var =stod(parsed_line[2]);
+        mut_prob =stod(parsed_line[3]);
+        num_gen_persist =stoi(parsed_line[4]);
+    }
+    catch (...){
+        return false;
+    }
+    if (parsed_line.size()>5){
+        double death = stod(parsed_line[5]);
+        cell_type->setDeathRate(death);
+    }
+    double offset = setNewBirth(mean, var);
+    for (int i=0; i<num_gen_persist-1; i++){
+        active_diff.push(1);
+    }
+    active_diff.push(offset);
+    return Clone::checkRep() & HerResetClone::checkRep();
+}
+
+
 
 bool HerEmpiricClone::readLine(vector<string>& parsed_line){
     //full line syntax: Clone HerEmpiricClone [type_id] [num_cells] [mean] [var] [mut_rate] [dist_filename]

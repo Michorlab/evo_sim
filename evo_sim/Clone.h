@@ -11,6 +11,7 @@
 
 #include <stdio.h>
 #include <vector>
+#include <queue>
 #include <string>
 
 using namespace std;
@@ -138,16 +139,32 @@ public:
     bool readLine(vector<string>& parsed_line);
 };
 
-class HeritableClone: public StochClone{
-private:
+class HeritableClone: public StochClone{ 
+protected:
     double mean;
     double var;
-protected:
     double setNewBirth(double mean, double var);
 public:
     HeritableClone(CellType& type, double mu, double sig, double mut, bool mult);
     HeritableClone(CellType& type, double mu, double sig, double mut, double offset, bool mult);
     HeritableClone(CellType& type, bool mult);
+    void reproduce();
+    bool readLine(vector<string>& parsed_line);
+};
+
+class HerResetClone: public HeritableClone{
+private:
+    // FIFO queue
+    queue<double> active_diff;
+    int num_gen_persist;
+    double reset();
+    bool checkRep(){
+        return active_diff.size() == num_gen_persist;
+    };
+public:
+    HerResetClone(CellType& type, double mu, double sig, double mut, double offset, bool mult, int num_gen, queue<double>& diffs);
+    HerResetClone(CellType& type, double mu, double sig, double mut, bool mult, int num_gen, queue<double>& diffs);
+    HerResetClone(CellType& type, bool mult);
     void reproduce();
     bool readLine(vector<string>& parsed_line);
 };

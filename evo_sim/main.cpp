@@ -736,6 +736,27 @@ bool SimParams::make_clone(vector<string> &parsed_line){
             new_type->insertClone(*new_clone);
         }
     }
+    else if (type == "HerReset"){
+        if (parsed_line.size() < 4){
+            err_type = "bad params for HerResetClone";
+            return false;
+        }
+        Clone *new_clone;
+        for (int i=0; i<num_cells; i++){
+            
+            if (*model_type == "moran"){
+                new_clone = new HerResetClone(*new_type, true);
+            }
+            else{
+                new_clone = new HerResetClone(*new_type, false);
+            }
+            if (!new_clone->readLine(parsed_line)){
+                err_type = "bad clone";
+                return false;
+            }
+            new_type->insertClone(*new_clone);
+        }
+    }
     else if (type == "HerEmpiric"){
         if (parsed_line.size() < 5){
             err_type = "bad params for HerEmpiricClone";
