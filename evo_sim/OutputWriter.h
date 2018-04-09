@@ -84,6 +84,23 @@ public:
     }
 };
 
+class MotherDaughterWriter: public DuringOutputWriter{
+private:
+    ofstream outfile;
+    int timestep;
+    int index;
+public:
+    MotherDaughterWriter(string ofile);
+    ~MotherDaughterWriter();
+    bool readLine(vector<string>& parsed_line);
+    void finalAction(CList& clone_list);
+    void duringSimAction(CList& clone_list);
+    void beginAction(CList& clone_list);
+    int getTypeIndex(){
+        return index;
+    }
+};
+
 class NumMutationsWriter: public DuringOutputWriter{
 private:
     ofstream outfile;

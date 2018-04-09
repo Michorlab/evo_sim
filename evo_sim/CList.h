@@ -34,6 +34,8 @@ protected:
     int num_types;
     bool death_var;
     bool recalc_birth;
+    double prev_fit;
+    double new_fit;
     
     // stores pointers to CellTypes that have been initialized in this simulation run. may include extinct types. no Clones in the simulation should have a CellType not included in this vector.
     std::vector<CellType *> curr_types;
@@ -87,6 +89,14 @@ public:
      @return index of next free type.
      */
     int getNextType();
+    
+    double getMotherBirth(){
+        return prev_fit;
+    }
+    
+    double getDaughterBirth(){
+        return new_fit;
+    }
     
     double getDeathRate(){
         return d;

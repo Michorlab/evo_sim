@@ -152,6 +152,18 @@ void NumMutationsWriter::beginAction(CList& clone_list){
     outfile << "data for cell type " << index << " sim number " << sim_number << endl;
 }
 
+void MotherDaughterWriter::beginAction(CList& clone_list){
+    string ofile_middle = "mother_daughter_"+to_string(sim_number);
+    outfile.open(ofile_loc + ofile_middle + ofile_name, ios::app);
+    outfile << "data for cell type " << index << " sim number " << sim_number << endl;
+}
+
+void MotherDaughterWriter::duringSimAction(CList &clone_list){
+    if (shouldWrite(clone_list) && clone_list.hasCellType(index) && clone_list.getTypeByIndex(index)->getNumCells() > 0){
+        outfile << clone_list.getCurrTime() << ", " << clone_list.getMotherBirth() << ", " << clone_list.getDaughterBirth() << endl;
+    }
+}
+
 void CountStepWriter::beginAction(CList& clone_list){
     string ofile_middle = "count_step_sim_"+to_string(sim_number);
     outfile.open(ofile_loc + ofile_middle + ofile_name, ios::app);
@@ -216,6 +228,11 @@ void NumMutationsWriter::finalAction(CList& clone_list){
     outfile.flush();
     outfile.close();
     sim_number++;
+}
+
+void MotherDaughterWriter::finalAction(CList& clone_list){
+    outfile.flush();
+    outfile.close();
 }
 
 AllTypesWriter::AllTypesWriter(string ofile, int period): DuringOutputWriter(ofile, period){
@@ -345,6 +362,11 @@ EndTimeWriter::~EndTimeWriter(){
     outfile.close();
 }
 
+MotherDaughterWriter::~MotherDaughterWriter(){
+    outfile.flush();
+    outfile.close();
+}
+
 EndPopWriter::EndPopWriter(string ofile): FinalOutputWriter(ofile){
     ofile_name = "end_pop.oevo";
     outfile.open(ofile_loc+ofile_name, ios::app);
@@ -393,6 +415,23 @@ MeanFitWriter::MeanFitWriter(string ofile, int period, int i, int sim):DuringOut
 FitnessDistWriter::FitnessDistWriter(string ofile): DuringOutputWriter(ofile){}
 
 MeanFitWriter::MeanFitWriter(string ofile): DuringOutputWriter(ofile){}
+
+MotherDaughterWriter::MotherDaughterWriter(string ofile): DuringOutputWriter(ofile){}
+
+bool MotherDaughterWriter::readLine(vector<string>& parsed_line){
+    if (parsed_line.size() != 2){
+        return false;
+    }
+    try{
+        writing_period =stoi(parsed_line[0]);
+        index =stoi(parsed_line[1]);
+    }
+    catch (...){
+        return false;
+    }
+    ofile_name = "type_" + to_string(index) + ".oevo";
+    return true;
+}
 
 bool FitnessDistWriter::readLine(vector<string>& parsed_line){
     if (parsed_line.size() != 2){
@@ -490,6 +529,8 @@ void FitnessDistWriter::finalAction(CList& clone_list){
     outfile.close();
     resetWriter();
 }
+
+
 
 NewMutantWriter::NewMutantWriter(string ofile): DuringOutputWriter(ofile){
     has_mutant = false;

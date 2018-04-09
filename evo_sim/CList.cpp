@@ -32,6 +32,8 @@ CList::CList(double death, MutationHandler& mut_handle, int max){
     end_node = NULL;
     death_var = false;
     recalc_birth = false;
+    prev_fit = 0;
+    new_fit = 0;
 }
 
 CList::CList(){
@@ -45,6 +47,8 @@ CList::CList(){
     d = 0;
     death_var = false;
     recalc_birth = false;
+    prev_fit = 0;
+    new_fit = 0;
 }
 
 void CList::clearClones(){
@@ -65,6 +69,8 @@ void CList::refreshSim(){
     end_node = NULL;
     root_types.clear();
     death_var = false;
+    prev_fit = 0;
+    new_fit = 0;
 }
 
 void CList::insertCellType(CellType& new_type) {
@@ -129,7 +135,7 @@ void CList::advance()
     double b_or_d = runif(*eng)*(tot_birth + total_death);
     if (b_or_d < (total_death)){
         if (death_var){
-             Clone& dead = chooseDeadVar(total_death);
+            Clone& dead = chooseDeadVar(total_death);
             if (dead.isSingleCell()){
                 delete &dead;
             }
@@ -138,7 +144,7 @@ void CList::advance()
             }
         }
         else{
-             Clone& dead = chooseDead();
+            Clone& dead = chooseDead();
             if (dead.isSingleCell()){
                 delete &dead;
             }
@@ -150,7 +156,9 @@ void CList::advance()
     }
     else{
         Clone& mother = chooseReproducer();
+        prev_fit = mother.getBirthRate();
         mother.reproduce();
+        new_fit = mother.getBirthRate();
     }
 }
 
@@ -300,7 +308,9 @@ void MoranPop::advance(){
         dead.removeOneCell();
     }
     Clone& mother = chooseReproducer();
+    prev_fit = mother.getBirthRate();
     mother.reproduce();
+    new_fit = mother.getBirthRate();
     time++;
 }
 
