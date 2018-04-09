@@ -158,7 +158,12 @@ HerEmpiricClone::HerEmpiricClone(CellType& type, double mu, double sig, double m
 HeritableClone::HeritableClone(CellType& type, double mu, double sig, double mut, double offset, bool mult) : StochClone(type, mut, mult){
     mean = mu;
     var = sig;
-    birth_rate = mean * offset;
+    if (is_mult){
+        birth_rate = mean * offset;
+    }
+    else{
+        birth_rate = mean + offset;
+    }
     cell_count = 1;
 }
 
@@ -350,9 +355,14 @@ double HerResetClone::reset(){
 void HerResetClone::reproduce(){
     uniform_real_distribution<double> runif;
     if (runif(*eng) < mut_prob){
-        MutationHandler& mut_handle = cell_type->getMutHandler();
         double offset = reset();
-        mut_handle.generateMutant(*cell_type, birth_rate, mut_prob);
+        MutationHandler& mut_handle = cell_type->getMutHandler();
+        if (is_mult){
+            mut_handle.generateMutant(*cell_type, birth_rate/offset, mut_prob);
+        }
+        else{
+            mut_handle.generateMutant(*cell_type, birth_rate - offset, mut_prob);
+        }
         HerResetClone *new_node = new HerResetClone(mut_handle.getNewType(), mut_handle.getNewBirthRate(), var, mut_handle.getNewMutProb(), offset, is_mult, num_gen_persist, active_diff);
         mut_handle.getNewType().insertClone(*new_node);
         addCells(1);
