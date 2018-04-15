@@ -161,7 +161,9 @@ void CList::advance()
         prev_fit = mother.getBirthRate();
         mother.reproduce();
         new_fit = mother.getBirthRate();
-        new_type = mut_model->getNewType().getIndex();
+        if (mut_model->has_mut()){
+            new_type = mut_model->getNewType().getIndex();
+        }
     }
 }
 
@@ -314,7 +316,9 @@ void MoranPop::advance(){
     prev_fit = mother.getBirthRate();
     mother.reproduce();
     new_fit = mother.getBirthRate();
-    new_type = mut_model->getNewType().getIndex();
+    if (mut_model->has_mut()){
+        new_type = mut_model->getNewType().getIndex();
+    }
     time++;
 }
 
