@@ -36,6 +36,7 @@ protected:
     bool recalc_birth;
     double prev_fit;
     double new_fit;
+    int new_type;
     
     // stores pointers to CellTypes that have been initialized in this simulation run. may include extinct types. no Clones in the simulation should have a CellType not included in this vector.
     std::vector<CellType *> curr_types;
@@ -70,7 +71,7 @@ protected:
         root = &new_root;
     }
     double getTotalDeath();
-    double getTotalBirth();
+    
     
 public:
     CList();
@@ -84,11 +85,15 @@ public:
      */
     virtual void advance();
     
+    double getTotalBirth();
+    
     /* get the index of a new cell type that doesn't conflict with the current typespace.
      SHOULD NEVER be called when their are no free types left (max_types = num_types).
      @return index of next free type.
      */
     int getNextType();
+    
+    int getMutType(){return new_type;}
     
     double getMotherBirth(){
         return prev_fit;

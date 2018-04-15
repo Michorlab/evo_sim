@@ -184,15 +184,31 @@ public:
 };
 
 class HerEmpiricClone: public EmpiricalClone{
-private:
-    double mean;
-    double var;
 protected:
     double setNewBirth(double mean, double var);
+    double mean;
+    double var;
 public:
     HerEmpiricClone(CellType& type, double mu, double sig, double mut, bool mult);
     HerEmpiricClone(CellType& type, double mu, double sig, double mut, double offset, bool mult);
     HerEmpiricClone(CellType& type, bool mult);
+    void reproduce();
+    bool readLine(vector<string>& parsed_line);
+};
+
+class HerResetEmpiricClone: public HerEmpiricClone{
+private:
+    // FIFO queue
+    queue<double> active_diff;
+    int num_gen_persist;
+    double reset();
+    bool checkRep(){
+        return active_diff.size() == num_gen_persist;
+    };
+public:
+    HerResetEmpiricClone(CellType& type, double mu, double sig, double mut, double offset, bool mult, int num_gen, queue<double>& diffs);
+    HerResetEmpiricClone(CellType& type, double mu, double sig, double mut, bool mult, int num_gen, queue<double>& diffs);
+    HerResetEmpiricClone(CellType& type, bool mult);
     void reproduce();
     bool readLine(vector<string>& parsed_line);
 };
