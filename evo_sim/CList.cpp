@@ -49,6 +49,7 @@ CList::CList(){
     recalc_birth = false;
     prev_fit = 0;
     new_fit = 0;
+    new_type = 0;
 }
 
 void CList::clearClones(){
@@ -71,6 +72,7 @@ void CList::refreshSim(){
     death_var = false;
     prev_fit = 0;
     new_fit = 0;
+    new_type = 0;
 }
 
 void CList::insertCellType(CellType& new_type) {
@@ -159,6 +161,7 @@ void CList::advance()
         prev_fit = mother.getBirthRate();
         mother.reproduce();
         new_fit = mother.getBirthRate();
+        new_type = mut_model->getNewType().getIndex();
     }
 }
 
@@ -311,6 +314,7 @@ void MoranPop::advance(){
     prev_fit = mother.getBirthRate();
     mother.reproduce();
     new_fit = mother.getBirthRate();
+    new_type = mut_model->getNewType().getIndex();
     time++;
 }
 

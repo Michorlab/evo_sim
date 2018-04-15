@@ -98,6 +98,11 @@ HerResetClone::HerResetClone(CellType& type, bool mult) : HeritableClone(type, m
     active_diff = queue<double>();
 }
 
+HerResetEmpiricClone::HerResetEmpiricClone(CellType& type, bool mult) : HerEmpiricClone(type, mult){
+    num_gen_persist = 0;
+    active_diff = queue<double>();
+}
+
 TypeEmpiricClone::TypeEmpiricClone(CellType& type, bool mult) : EmpiricalClone(type, mult){
     mean = 0;
     var = 0;
@@ -175,6 +180,14 @@ HerResetClone::HerResetClone(CellType& type, double mu, double sig, double mut, 
     }
 }
 
+HerResetEmpiricClone::HerResetEmpiricClone(CellType& type, double mu, double sig, double mut, double offset, bool mult, int num_gen, queue<double>& diffs) : HerEmpiricClone(type, mu, sig, mut, offset, mult){
+    num_gen_persist = num_gen;
+    active_diff = queue<double>(diffs);
+    if (!HerResetEmpiricClone::checkRep()){
+        throw "mismanaged reset queue";
+    }
+}
+
 HerResetClone::HerResetClone(CellType& type, double mu, double sig, double mut, bool mult, int num_gen, queue<double>& diffs) : HeritableClone(type, mult){
     mean = mu;
     var = sig;
@@ -184,6 +197,19 @@ HerResetClone::HerResetClone(CellType& type, double mu, double sig, double mut, 
     active_diff = queue<double>(diffs);
     cell_count = 1;
     if (!HerResetClone::checkRep()){
+        throw "mismanaged reset queue";
+    }
+}
+
+HerResetEmpiricClone::HerResetEmpiricClone(CellType& type, double mu, double sig, double mut, bool mult, int num_gen, queue<double>& diffs) : HerEmpiricClone(type, mult){
+    mean = mu;
+    var = sig;
+    mut_prob = mut;
+    birth_rate = mu;
+    num_gen_persist = num_gen;
+    active_diff = queue<double>(diffs);
+    cell_count = 1;
+    if (!HerResetEmpiricClone::checkRep()){
         throw "mismanaged reset queue";
     }
 }
@@ -352,6 +378,21 @@ double HerResetClone::reset(){
     return offset;
 }
 
+double HerResetEmpiricClone::reset(){
+    double to_remove = active_diff.front();
+    removeOneCell();
+    if (is_mult){
+        birth_rate = birth_rate/to_remove;
+    }
+    else{
+        birth_rate = birth_rate - to_remove;
+    }
+    active_diff.pop();
+    double offset = setNewBirth(birth_rate, var);
+    active_diff.push(offset);
+    return offset;
+}
+
 void HerResetClone::reproduce(){
     uniform_real_distribution<double> runif;
     if (runif(*eng) < mut_prob){
@@ -370,6 +411,29 @@ void HerResetClone::reproduce(){
     else{
         reset();
         HerResetClone *new_node = new HerResetClone(*cell_type, birth_rate, var, mut_prob, is_mult, num_gen_persist, active_diff);
+        addCells(1);
+        cell_type->insertClone(*new_node);
+    }
+}
+
+void HerResetEmpiricClone::reproduce(){
+    uniform_real_distribution<double> runif;
+    if (runif(*eng) < mut_prob){
+        double offset = reset();
+        MutationHandler& mut_handle = cell_type->getMutHandler();
+        if (is_mult){
+            mut_handle.generateMutant(*cell_type, birth_rate/offset, mut_prob);
+        }
+        else{
+            mut_handle.generateMutant(*cell_type, birth_rate - offset, mut_prob);
+        }
+        HerResetEmpiricClone *new_node = new HerResetEmpiricClone(mut_handle.getNewType(), mut_handle.getNewBirthRate(), var, mut_handle.getNewMutProb(), offset, is_mult, num_gen_persist, active_diff);
+        mut_handle.getNewType().insertClone(*new_node);
+        addCells(1);
+    }
+    else{
+        reset();
+        HerResetEmpiricClone *new_node = new HerResetEmpiricClone(*cell_type, birth_rate, var, mut_prob, is_mult, num_gen_persist, active_diff);
         addCells(1);
         cell_type->insertClone(*new_node);
     }
@@ -536,7 +600,34 @@ bool HerResetClone::readLine(vector<string>& parsed_line){
     return Clone::checkRep() & HerResetClone::checkRep();
 }
 
-
+bool HerResetEmpiricClone::readLine(vector<string>& parsed_line){
+    //full line syntax: Clone HerResetEmpiric [type_id] [num_cells] [mean] [var] [mut_rate] [num_gen] [filename]
+    cell_count = 1;
+    string filename;
+    try{
+        mean =stod(parsed_line[1]);
+        var =stod(parsed_line[2]);
+        mut_prob =stod(parsed_line[3]);
+        num_gen_persist =stoi(parsed_line[4]);
+        filename = parsed_line[5];
+    }
+    catch (...){
+        return false;
+    }
+    if (!readDist(filename)){
+        return false;
+    }
+    if (parsed_line.size()>6){
+        double death = stod(parsed_line[6]);
+        cell_type->setDeathRate(death);
+    }
+    double offset = setNewBirth(mean, var);
+    for (int i=0; i<num_gen_persist-1; i++){
+        active_diff.push(1);
+    }
+    active_diff.push(offset);
+    return Clone::checkRep() & HerResetEmpiricClone::checkRep();
+}
 
 bool HerEmpiricClone::readLine(vector<string>& parsed_line){
     //full line syntax: Clone HerEmpiricClone [type_id] [num_cells] [mean] [var] [mut_rate] [dist_filename]
