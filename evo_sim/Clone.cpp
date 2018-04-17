@@ -79,6 +79,7 @@ SimpleClone::SimpleClone(CellType& type) : Clone(type){};
 
 StochClone::StochClone(CellType& type, bool mult) : Clone(type){
     is_mult = mult;
+    dist_type = "lognorm";
 };
 
 EmpiricalClone::EmpiricalClone(CellType& type, bool mult) : StochClone(type, mult){};
@@ -146,11 +147,12 @@ StochClone::StochClone(CellType& type, double mut, bool mult) : Clone(type, mut)
 
 EmpiricalClone::EmpiricalClone(CellType& type, double mut, bool mult) : StochClone(type, mut, mult){};
 
-HeritableClone::HeritableClone(CellType& type, double mu, double sig, double mut, bool mult) : StochClone(type, mut, mult){
+HeritableClone::HeritableClone(CellType& type, double mu, double sig, double mut, bool mult, string dist) : StochClone(type, mut, mult){
     mean = mu;
     var = sig;
     setNewBirth(mean, var);
     cell_count = 1;
+    dist_type = dist;
 }
 
 HerEmpiricClone::HerEmpiricClone(CellType& type, double mu, double sig, double mut, bool mult) : EmpiricalClone(type, mut, mult){
@@ -160,7 +162,7 @@ HerEmpiricClone::HerEmpiricClone(CellType& type, double mu, double sig, double m
     cell_count = 1;
 }
 
-HeritableClone::HeritableClone(CellType& type, double mu, double sig, double mut, double offset, bool mult) : StochClone(type, mut, mult){
+HeritableClone::HeritableClone(CellType& type, double mu, double sig, double mut, double offset, bool mult, string dist) : StochClone(type, mut, mult){
     mean = mu;
     var = sig;
     if (is_mult){
@@ -170,9 +172,10 @@ HeritableClone::HeritableClone(CellType& type, double mu, double sig, double mut
         birth_rate = mean + offset;
     }
     cell_count = 1;
+    dist_type = dist;
 }
 
-HerResetClone::HerResetClone(CellType& type, double mu, double sig, double mut, double offset, bool mult, int num_gen, queue<double>& diffs) : HeritableClone(type, mu, sig, mut, offset, mult){
+HerResetClone::HerResetClone(CellType& type, double mu, double sig, double mut, double offset, bool mult, int num_gen, queue<double>& diffs, string dist) : HeritableClone(type, mu, sig, mut, offset, mult, dist){
     num_gen_persist = num_gen;
     active_diff = queue<double>(diffs);
     if (!HerResetClone::checkRep()){
@@ -188,13 +191,14 @@ HerResetEmpiricClone::HerResetEmpiricClone(CellType& type, double mu, double sig
     }
 }
 
-HerResetClone::HerResetClone(CellType& type, double mu, double sig, double mut, bool mult, int num_gen, queue<double>& diffs) : HeritableClone(type, mult){
+HerResetClone::HerResetClone(CellType& type, double mu, double sig, double mut, bool mult, int num_gen, queue<double>& diffs, string dist) : HeritableClone(type, mult){
     mean = mu;
     var = sig;
     mut_prob = mut;
     birth_rate = mu;
     num_gen_persist = num_gen;
     active_diff = queue<double>(diffs);
+    dist_type = dist;
     cell_count = 1;
     if (!HerResetClone::checkRep()){
         throw "mismanaged reset queue";
@@ -265,6 +269,31 @@ double StochClone::drawLogNorm(double mean, double var){
     return to_return;
 }
 
+double StochClone::drawTruncDoubleExp(double mean, double var){
+    exponential_distribution<double> expo(var/2.0);
+    std::bernoulli_distribution bern(0.5);
+    double to_return = expo(*eng);
+    if (bern(*eng)){
+        to_return = -to_return;
+    }
+    to_return += mean;
+    if (to_return < 0){
+        return 0;
+    }
+    return to_return;
+}
+
+double StochClone::drawTruncGamma(double mean, double var){
+    double beta = var/mean;
+    double alpha = mean/beta;
+    std::gamma_distribution<double> gam(alpha,beta);
+    double to_return = gam(*eng);
+    if (to_return < 0){
+        return 0;
+    }
+    return to_return;
+}
+
 void TypeSpecificClone::reproduce(){
     uniform_real_distribution<double> runif;
     if (runif(*eng) < mut_prob){
@@ -288,14 +317,14 @@ void TypeSpecificClone::reproduce(){
 double TypeSpecificClone::setNewBirth(double mean, double var){
     double offset = 0;
     if (is_mult){
-        offset = drawLogNorm(1, var);
+        offset = drawFromDist(1, var);
         if (offset < 0){
             offset = 0;
         }
         birth_rate = offset * mean;
     }
     else{
-        offset = drawLogNorm(0, var);
+        offset = drawFromDist(0, var);
         if (birth_rate + offset < 0){
             offset = -birth_rate;
         }
@@ -350,13 +379,13 @@ void HeritableClone::reproduce(){
         mut_handle.generateMutant(*cell_type, birth_rate, mut_prob);
         removeOneCell();
         double offset = setNewBirth(birth_rate, var);
-        HeritableClone *new_node = new HeritableClone(mut_handle.getNewType(), mut_handle.getNewBirthRate(), var, mut_handle.getNewMutProb(), offset, is_mult);
+        HeritableClone *new_node = new HeritableClone(mut_handle.getNewType(), mut_handle.getNewBirthRate(), var, mut_handle.getNewMutProb(), offset, is_mult, dist_type);
         mut_handle.getNewType().insertClone(*new_node);
         addCells(1);
     }
     else{
         removeOneCell();
-        HeritableClone *new_node = new HeritableClone(*cell_type, birth_rate, var, mut_prob, is_mult);
+        HeritableClone *new_node = new HeritableClone(*cell_type, birth_rate, var, mut_prob, is_mult, dist_type);
         birth_rate = new_node->getBirthRate();
         addCells(1);
         cell_type->insertClone(*new_node);
@@ -404,13 +433,13 @@ void HerResetClone::reproduce(){
         else{
             mut_handle.generateMutant(*cell_type, birth_rate - offset, mut_prob);
         }
-        HerResetClone *new_node = new HerResetClone(mut_handle.getNewType(), mut_handle.getNewBirthRate(), var, mut_handle.getNewMutProb(), offset, is_mult, num_gen_persist, active_diff);
+        HerResetClone *new_node = new HerResetClone(mut_handle.getNewType(), mut_handle.getNewBirthRate(), var, mut_handle.getNewMutProb(), offset, is_mult, num_gen_persist, active_diff, dist_type);
         mut_handle.getNewType().insertClone(*new_node);
         addCells(1);
     }
     else{
         reset();
-        HerResetClone *new_node = new HerResetClone(*cell_type, birth_rate, var, mut_prob, is_mult, num_gen_persist, active_diff);
+        HerResetClone *new_node = new HerResetClone(*cell_type, birth_rate, var, mut_prob, is_mult, num_gen_persist, active_diff, dist_type);
         addCells(1);
         cell_type->insertClone(*new_node);
     }
@@ -439,17 +468,33 @@ void HerResetEmpiricClone::reproduce(){
     }
 }
 
+double StochClone::drawFromDist(double mean, double var){
+    if (dist_type=="lognorm"){
+        return drawLogNorm(mean, var);
+    }
+    else if (dist_type=="gamma"){
+        return drawTruncGamma(mean, var);
+    }
+    else if (dist_type=="expo"){
+        return drawTruncDoubleExp(mean, var);
+    }
+    else{
+        throw "bad dist type";
+        return 0;
+    }
+}
+
 double HeritableClone::setNewBirth(double mean, double var){
     double offset = 0;
     if (is_mult){
-        offset = drawLogNorm(1, var);
+        offset = drawFromDist(1, var);
         if (offset < 0){
             offset = 0;
         }
         birth_rate = offset * mean;
     }
     else{
-        offset = drawLogNorm(0, var);
+        offset = drawFromDist(0, var);
         if (birth_rate + offset < 0){
             offset = -birth_rate;
         }
@@ -529,7 +574,7 @@ bool TypeSpecificClone::readLine(vector<string>& parsed_line){
         double death = stod(parsed_line[4]);
         cell_type->setDeathRate(death);
     }
-    birth_rate = drawLogNorm(mean, var);
+    birth_rate = drawFromDist(mean, var);
     return checkRep();
 }
 
@@ -569,7 +614,10 @@ bool HeritableClone::readLine(vector<string>& parsed_line){
         return false;
     }
     if (parsed_line.size()>4){
-        double death = stod(parsed_line[4]);
+        dist_type = parsed_line[4];
+    }
+    if (parsed_line.size()>5){
+        double death = stod(parsed_line[5]);
         cell_type->setDeathRate(death);
     }
     setNewBirth(mean, var);
@@ -589,7 +637,10 @@ bool HerResetClone::readLine(vector<string>& parsed_line){
         return false;
     }
     if (parsed_line.size()>5){
-        double death = stod(parsed_line[5]);
+        dist_type = parsed_line[5];
+    }
+    if (parsed_line.size()>6){
+        double death = stod(parsed_line[6]);
         cell_type->setDeathRate(death);
     }
     double offset = setNewBirth(mean, var);

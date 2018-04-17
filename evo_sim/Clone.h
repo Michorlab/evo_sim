@@ -94,10 +94,15 @@ public:
 };
 
 class StochClone: public Clone{
+private:
+    double drawLogNorm(double mean, double var);
+    double drawTruncGamma(double mean, double var);
+    double drawTruncDoubleExp(double mean, double var);
 protected:
     bool is_mult;
-    double drawLogNorm(double mean, double var);
     virtual double setNewBirth(double mean, double var) = 0;
+    double drawFromDist(double mean, double var);
+    string dist_type;
 public:
     virtual void reproduce() = 0;
     virtual bool readLine(vector<string>& parsed_line) = 0;
@@ -145,8 +150,8 @@ protected:
     double var;
     double setNewBirth(double mean, double var);
 public:
-    HeritableClone(CellType& type, double mu, double sig, double mut, bool mult);
-    HeritableClone(CellType& type, double mu, double sig, double mut, double offset, bool mult);
+    HeritableClone(CellType& type, double mu, double sig, double mut, bool mult, string dist);
+    HeritableClone(CellType& type, double mu, double sig, double mut, double offset, bool mult, string dist);
     HeritableClone(CellType& type, bool mult);
     void reproduce();
     bool readLine(vector<string>& parsed_line);
@@ -162,8 +167,8 @@ private:
         return active_diff.size() == num_gen_persist;
     };
 public:
-    HerResetClone(CellType& type, double mu, double sig, double mut, double offset, bool mult, int num_gen, queue<double>& diffs);
-    HerResetClone(CellType& type, double mu, double sig, double mut, bool mult, int num_gen, queue<double>& diffs);
+    HerResetClone(CellType& type, double mu, double sig, double mut, double offset, bool mult, int num_gen, queue<double>& diffs, string dist);
+    HerResetClone(CellType& type, double mu, double sig, double mut, bool mult, int num_gen, queue<double>& diffs, string dist);
     HerResetClone(CellType& type, bool mult);
     void reproduce();
     bool readLine(vector<string>& parsed_line);
