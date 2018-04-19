@@ -561,15 +561,14 @@ void NewMutantWriter::beginAction(CList& clone_list){
     if (clone_list.hasCellType(index) && clone_list.getTypeByIndex(index)->getNumCells() > 0){
         has_mutant = true;
     }
+    //to_write = new vector<string>();
 }
 
 void NewMutantWriter::finalAction(CList &clone_list){
-    for (vector<string>::iterator it = to_write.begin(); it != to_write.end(); ++it){
-        outfile << (*it) << endl;
-    }
-    to_write.clear();
     outfile.flush();
     outfile.close();
+    //delete to_write;
+    //to_write = NULL;
 }
 
 void NewMutantWriter::duringSimAction(CList &clone_list){
@@ -578,18 +577,7 @@ void NewMutantWriter::duringSimAction(CList &clone_list){
             string new_line = to_string(sim_number) + ", " + to_string(clone_list.getCurrTime());
             new_line += ", " + to_string(clone_list.getDaughterBirth());
             new_line += ", " + to_string(clone_list.getTotalBirth());
-            if (has_mutant){
-                string prev = to_write.back();
-                prev.pop_back();
-                to_write.pop_back();
-                prev += to_string(1);
-                to_write.push_back(prev);
-                new_line += ", 1";
-            }
-            else{
-                new_line += ", 0";
-            }
-            to_write.push_back(new_line);
+            outfile << new_line << endl;
             has_mutant = true;
         }
     }

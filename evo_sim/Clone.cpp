@@ -143,16 +143,17 @@ Clone::Clone(CellType& type, double mut){
 
 StochClone::StochClone(CellType& type, double mut, bool mult) : Clone(type, mut){
     is_mult = mult;
+    dist_type = "lognorm";
 }
 
 EmpiricalClone::EmpiricalClone(CellType& type, double mut, bool mult) : StochClone(type, mut, mult){};
 
 HeritableClone::HeritableClone(CellType& type, double mu, double sig, double mut, bool mult, string dist) : StochClone(type, mut, mult){
+    dist_type = dist;
     mean = mu;
     var = sig;
     setNewBirth(mean, var);
     cell_count = 1;
-    dist_type = dist;
 }
 
 HerEmpiricClone::HerEmpiricClone(CellType& type, double mu, double sig, double mut, bool mult) : EmpiricalClone(type, mut, mult){
@@ -270,7 +271,8 @@ double StochClone::drawLogNorm(double mean, double var){
 }
 
 double StochClone::drawTruncDoubleExp(double mean, double var){
-    exponential_distribution<double> expo(var/2.0);
+    double lambda = 1.0/sqrt(var/2.0);
+    exponential_distribution<double> expo(lambda);
     std::bernoulli_distribution bern(0.5);
     double to_return = expo(*eng);
     if (bern(*eng)){
@@ -479,6 +481,7 @@ double StochClone::drawFromDist(double mean, double var){
         return drawTruncDoubleExp(mean, var);
     }
     else{
+        std::cout << dist_type << std::endl; 
         throw "bad dist type";
         return 0;
     }

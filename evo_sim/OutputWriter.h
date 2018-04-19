@@ -259,7 +259,7 @@ private:
     ofstream outfile;
     int index;
     bool has_mutant;
-    vector<string> to_write;
+    //vector<string> *to_write;
 public:
     ~NewMutantWriter();
     NewMutantWriter(string ofile);
