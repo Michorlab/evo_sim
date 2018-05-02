@@ -212,6 +212,18 @@ void CellType::subtractOneCell(double b){
     clone_list->removeCell(b);
 }
 
+void CellType::addChild(CellType &child_type){
+    bool has_child = false;
+    for (vector<CellType *>::iterator it = children.begin(); it != children.end(); ++it){
+        if ((*it)->getIndex() == child_type.getIndex()){
+            has_child = true;
+        }
+    }
+    if (!has_child){
+        children.push_back(&child_type);
+    }
+}
+
 void CellType::addCells(int num, double b){
     num_cells += num;
     total_birth_rate += b*num;
@@ -620,6 +632,9 @@ bool SimParams::make_writer(vector<string> &parsed_line){
     else if (type == "IsExtinct"){
         new_writer = new IsExtinctWriter(*outfolder);
     }
+    else if (type == "IfType"){
+        new_writer = new IfTypeWriter(*outfolder);
+    }
     else if (type == "TypeStructure"){
         new_writer = new TypeStructureWriter(*outfolder);
     }
@@ -646,6 +661,9 @@ bool SimParams::make_writer(vector<string> &parsed_line){
     }
     else if (type == "EndPop"){
         new_writer = new EndPopWriter(*outfolder);
+    }
+    else if (type == "EndPopTypes"){
+        new_writer = new EndPopTypesWriter(*outfolder);
     }
     else if (type == "CountStep"){
         new_writer = new CountStepWriter(*outfolder);
@@ -859,6 +877,9 @@ bool SimParams::make_mut_handler(){
     }
     else if (mut_type == "ThreeTypesMult"){
         mut_handler = new ThreeTypesMultMutation();
+    }
+    else if (mut_type == "FixedSites"){
+        mut_handler = new FixedSitesMutation();
     }
     else if (mut_type == "Neutral"){
         mut_handler = new NeutralMutation();

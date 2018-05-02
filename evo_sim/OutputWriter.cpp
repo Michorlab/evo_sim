@@ -372,10 +372,26 @@ EndPopWriter::EndPopWriter(string ofile): FinalOutputWriter(ofile){
     outfile.open(ofile_loc+ofile_name, ios::app);
 }
 
+EndPopTypesWriter::EndPopTypesWriter(string ofile): FinalOutputWriter(ofile){
+    ofile_name = "end_pop_types.oevo";
+    outfile.open(ofile_loc+ofile_name, ios::app);
+}
+
 void EndPopWriter::finalAction(CList& clone_list){
     outfile << sim_number << ", " << clone_list.getNumCells() << endl;
     outfile.flush();
     sim_number++;
+}
+
+void EndPopTypesWriter::finalAction(CList& clone_list){
+    outfile << sim_number;
+    for (int i=0; i<clone_list.getMaxTypes(); i++){
+        if (clone_list.hasCellType(i)){
+             outfile << i << ", " << clone_list.getTypeByIndex(i)->getNumCells() << endl;
+        }
+    }
+    outfile << endl;
+    outfile.flush();
 }
 
 EndPopWriter::~EndPopWriter(){
@@ -383,8 +399,22 @@ EndPopWriter::~EndPopWriter(){
     outfile.close();
 }
 
+EndPopTypesWriter::~EndPopTypesWriter(){
+    outfile.flush();
+    outfile.close();
+}
+
 IfType2Writer::IfType2Writer(string ofile): FinalOutputWriter(ofile){
     ofile_name = "iftype2.oevo";
+    outfile.open(ofile_loc+ofile_name, ios::app);
+}
+
+IfTypeWriter::IfTypeWriter(string ofile): FinalOutputWriter(ofile){
+    ofile_name = "iftype.oevo";
+}
+
+void IfTypeWriter::beginAction(CList &clone_list){
+    string ofile_middle = "type_" + to_string(index) + "_";
     outfile.open(ofile_loc+ofile_name, ios::app);
 }
 
@@ -395,7 +425,19 @@ void IfType2Writer::finalAction(CList& clone_list){
     outfile.flush();
 }
 
+void IfTypeWriter::finalAction(CList& clone_list){
+    bool is_2 = clone_list.getTypeByIndex(index);
+    is_2 = is_2 && (clone_list.getTypeByIndex(index)->getNumCells() == clone_list.getNumCells());
+    outfile << sim_number << ", " << is_2 << endl;
+    outfile.flush();
+}
+
 IfType2Writer::~IfType2Writer(){
+    outfile.flush();
+    outfile.close();
+}
+
+IfTypeWriter::~IfTypeWriter(){
     outfile.flush();
     outfile.close();
 }
@@ -430,6 +472,19 @@ bool MotherDaughterWriter::readLine(vector<string>& parsed_line){
         return false;
     }
     ofile_name = "type_" + to_string(index) + ".oevo";
+    return true;
+}
+
+bool IfTypeWriter::readLine(vector<string>& parsed_line){
+    if (parsed_line.size() != 1){
+        return false;
+    }
+    try{
+        index =stoi(parsed_line[0]);
+    }
+    catch (...){
+        return false;
+    }
     return true;
 }
 

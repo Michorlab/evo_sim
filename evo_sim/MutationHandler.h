@@ -37,6 +37,8 @@ protected:
      */
     CellType* getNewTypeByIndex(int index, CellType& curr_type);
 public:
+    MutationHandler();
+    
     //@return birth rate of new type, after generateMutant
     double getNewBirthRate() {return birth_rate;}
     
@@ -126,6 +128,20 @@ public:
     void generateMutant(CellType& type, double b, double mut){
         throw "should not be mutating- no mutation in simulation";
     }
+};
+
+class FixedSitesMutation: public MutationHandler {
+private:
+    int getAdjIndex(int cell_type, int adj_type);
+    int max_types;
+    double* fitnesses;
+    int* adj_mat;
+    bool is_mult;
+public:
+    FixedSitesMutation();
+    ~FixedSitesMutation();
+    void generateMutant(CellType& type, double b, double mut);
+    bool read(std::vector<string>& params);
 };
 
 #endif /* MutationHandler_h */

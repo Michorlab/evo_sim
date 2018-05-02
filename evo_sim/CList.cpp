@@ -255,18 +255,38 @@ void CList::removeCell(double b){
     tot_cell_count --;
 }
 
+/*
 void CList::walkTypesAndWrite(ofstream& outfile, CellType& root){
-    outfile << root.getIndex() << "\t" << root.isExtinct() << "\t";
+    outfile << root.getIndex() << ", " << root.isExtinct() << ", ";
     std::vector<CellType *> children = root.getChildren();
     for (int i=0; i<int(children.size()); i++){
-        outfile << children[i]->getIndex() << "\t";
+        if (children[i]->getParent()->getIndex() == root.getIndex()){
+            outfile << children[i]->getIndex() << ", ";
+        }
     }
     outfile << endl;
     for (int i=0; i<int(children.size()); i++){
-        walkTypesAndWrite(outfile, *children[i]);
+        if (children[i]->getParent()->getIndex() == root.getIndex()){
+            walkTypesAndWrite(outfile, *children[i]);
+        }
     }
 }
+*/
 
+void CList::walkTypesAndWrite(ofstream& outfile, CellType& root){
+    for (int i=0; i<max_types; i++){
+        if (hasCellType(i)){
+            outfile << i << ", " << getTypeByIndex(i)->getNumCells() << ", ";
+            if (getTypeByIndex(i)->getParent()){
+                outfile << getTypeByIndex(i)->getParent()->getIndex() << endl;
+            }
+            else{
+                outfile << endl;
+            }
+        }
+    }
+}
+ 
 bool CList::handle_line(vector<string>& parsed_line){
     if (parsed_line[0] == "death"){
         d =stod(parsed_line[1]);

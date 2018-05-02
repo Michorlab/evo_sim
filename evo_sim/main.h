@@ -111,14 +111,16 @@ public:
     /* called when a new type is formed after mutation from this parent type
      @param child_type child to be added
      */
-    void addChild(CellType& child_type){
-        children.push_back(&child_type);
-    }
+    void addChild(CellType& child_type);
+    
     std::vector<CellType *>& getChildren(){
         return children;
     }
     CellType* getParent(){
         return parent;
+    }
+    void setParent(CellType *parent_type){
+        parent = parent_type;
     }
     bool isExtinct(){
         return num_cells == 0;

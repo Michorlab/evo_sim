@@ -221,6 +221,18 @@ public:
     bool readLine(vector<string>& parsed_line){return true;}
 };
 
+class IfTypeWriter: public FinalOutputWriter{
+private:
+    ofstream outfile;
+    int index;
+public:
+    ~IfTypeWriter();
+    IfTypeWriter(string ofile);
+    void finalAction(CList& clone_list);
+    void beginAction(CList& clone_list);
+    bool readLine(vector<string>& parsed_line);
+};
+
 class IsExtinctWriter: public FinalOutputWriter{
 private:
     ofstream outfile;
@@ -249,6 +261,17 @@ private:
 public:
     ~EndPopWriter();
     EndPopWriter(string ofile);
+    void finalAction(CList& clone_list);
+    void beginAction(CList& clone_list){};
+    bool readLine(vector<string>& parsed_line){return true;}
+};
+
+class EndPopTypesWriter: public FinalOutputWriter{
+private:
+    ofstream outfile;
+public:
+    ~EndPopTypesWriter();
+    EndPopTypesWriter(string ofile);
     void finalAction(CList& clone_list);
     void beginAction(CList& clone_list){};
     bool readLine(vector<string>& parsed_line){return true;}
