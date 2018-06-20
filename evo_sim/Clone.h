@@ -131,6 +131,7 @@ public:
 };
 
 class TypeSpecificClone: public StochClone{
+    // equivalent to a HerResetClone with 1 generation alteration lifetime.
 private:
     double mean;
     double var;
@@ -158,10 +159,13 @@ public:
 };
 
 class HerResetClone: public HeritableClone{
+    // draws one new fitness alteration per generation, removes fitness alterations after exactly a given number of generations
 private:
     // FIFO queue
     queue<double> active_diff;
     int num_gen_persist;
+    
+    // called in every reproduction to remove last alteration.
     double reset();
     bool checkRep(){
         return active_diff.size() == num_gen_persist;
@@ -170,6 +174,36 @@ public:
     HerResetClone(CellType& type, double mu, double sig, double mut, double offset, bool mult, int num_gen, queue<double>& diffs, string dist);
     HerResetClone(CellType& type, double mu, double sig, double mut, bool mult, int num_gen, queue<double>& diffs, string dist);
     HerResetClone(CellType& type, bool mult);
+    void reproduce();
+    bool readLine(vector<string>& parsed_line);
+};
+
+class HerResetExpClone: public HeritableClone{
+    // draws one new fitness alteration per generation, removes fitness alterations after an exponentially-distributed number of generations
+private:
+    vector<double> active_diff;
+    
+    // Given as exponential rate constant.
+    // The average lifetime is 1/time_constant.
+    double time_constant;
+    
+    double accum_rate;
+    
+    // called in every reproduction to choose alteration to remove and remove alterations.
+    // DOES NOT ADD ALTERATIONS! add_alteration() does this.
+    void reset();
+    
+    double add_alteration();
+    
+    // adds a Poisson-distributed number of alterations
+    double add_alterations();
+    bool checkRep(){
+        return (accum_rate > 0 && time_constant > 0);
+    };
+public:
+    HerResetExpClone(CellType& type, double mu, double sig, double mut, double offset, bool mult, double time, double accum, vector<double>& diffs, string dist);
+    HerResetExpClone(CellType& type, double mu, double sig, double mut, bool mult, double time, double accum, vector<double>& diffs, string dist);
+    HerResetExpClone(CellType& type, bool mult);
     void reproduce();
     bool readLine(vector<string>& parsed_line);
 };
