@@ -99,10 +99,13 @@ HerResetClone::HerResetClone(CellType& type, bool mult) : HeritableClone(type, m
     active_diff = queue<double>();
 }
 
-HerResetExpClone::HerResetExpClone(CellType& type, bool mult) : HeritableClone(type, mult){
+HerResetExpClone::HerResetExpClone(CellType& type, bool mult) : HerPoissonClone(type, mult){
     time_constant = 0;
-    accum_rate = 0;
     active_diff = vector<double>();
+}
+
+HerPoissonClone::HerPoissonClone(CellType& type, bool mult) : HeritableClone(type, mult){
+    accum_rate = 0;
 }
 
 HerResetEmpiricClone::HerResetEmpiricClone(CellType& type, bool mult) : HerEmpiricClone(type, mult){
@@ -190,13 +193,17 @@ HerResetClone::HerResetClone(CellType& type, double mu, double sig, double mut, 
     }
 }
 
-HerResetExpClone::HerResetExpClone(CellType& type, double mu, double sig, double mut, double offset, bool mult, double time, double accum, vector<double>& diffs, string dist) : HeritableClone(type, mu, sig, mut, offset, mult, dist){
+HerResetExpClone::HerResetExpClone(CellType& type, double mu, double sig, double mut, double offset, bool mult, double time, double accum, vector<double>& diffs, string dist) : HerPoissonClone(type, mu, sig, mut, offset, mult, accum, dist){
     time_constant = time;
     accum_rate = accum;
     active_diff = vector<double>(diffs);
     if (!HerResetExpClone::checkRep()){
         throw "bad time constant for HerResetExp";
     }
+}
+
+HerPoissonClone::HerPoissonClone(CellType& type, double mu, double sig, double mut, double offset, bool mult, double accum, string dist) : HeritableClone(type, mu, sig, mut, offset, mult, dist){
+    accum_rate = accum;
 }
 
 HerResetEmpiricClone::HerResetEmpiricClone(CellType& type, double mu, double sig, double mut, double offset, bool mult, int num_gen, queue<double>& diffs) : HerEmpiricClone(type, mu, sig, mut, offset, mult){
@@ -221,7 +228,7 @@ HerResetClone::HerResetClone(CellType& type, double mu, double sig, double mut, 
     }
 }
 
-HerResetExpClone::HerResetExpClone(CellType& type, double mu, double sig, double mut, bool mult, double time, double accum, vector<double>& diffs, string dist) : HeritableClone(type, mult){
+HerResetExpClone::HerResetExpClone(CellType& type, double mu, double sig, double mut, bool mult, double time, double accum, vector<double>& diffs, string dist) : HerPoissonClone(type, mult){
     mean = mu;
     var = sig;
     mut_prob = mut;
@@ -234,6 +241,16 @@ HerResetExpClone::HerResetExpClone(CellType& type, double mu, double sig, double
     if (!HerResetExpClone::checkRep()){
         throw "bad time constant for HerResetExp";
     }
+}
+
+HerPoissonClone::HerPoissonClone(CellType& type, double mu, double sig, double mut, bool mult, double accum, string dist) : HeritableClone(type, mult){
+    mean = mu;
+    var = sig;
+    mut_prob = mut;
+    birth_rate = mu;
+    accum_rate = accum;
+    dist_type = dist;
+    cell_count = 1;
 }
 
 HerResetEmpiricClone::HerResetEmpiricClone(CellType& type, double mu, double sig, double mut, bool mult, int num_gen, queue<double>& diffs) : HerEmpiricClone(type, mult){
@@ -489,7 +506,12 @@ double HerResetExpClone::add_alteration(){
     return offset;
 }
 
-double HerResetExpClone::add_alterations(){
+double HerPoissonClone::add_alteration(){
+    double offset = setNewBirth(birth_rate, var);
+    return offset;
+}
+
+double HerPoissonClone::add_alterations(){
     std::poisson_distribution<int> rpois(accum_rate);
     
     double offset;
@@ -567,6 +589,31 @@ void HerResetExpClone::reproduce(){
         reset();
         add_alterations();
         HerResetExpClone *new_node = new HerResetExpClone(*cell_type, birth_rate, var, mut_prob, is_mult, time_constant, accum_rate, active_diff, dist_type);
+        addCells(1);
+        cell_type->insertClone(*new_node);
+    }
+}
+
+void HerPoissonClone::reproduce(){
+    uniform_real_distribution<double> runif;
+    if (runif(*eng) < mut_prob){
+        removeOneCell();
+        double offset = add_alterations();
+        MutationHandler& mut_handle = cell_type->getMutHandler();
+        if (is_mult){
+            mut_handle.generateMutant(*cell_type, birth_rate/offset, mut_prob);
+        }
+        else{
+            mut_handle.generateMutant(*cell_type, birth_rate - offset, mut_prob);
+        }
+        HerPoissonClone *new_node = new HerPoissonClone(mut_handle.getNewType(), mut_handle.getNewBirthRate(), var, mut_handle.getNewMutProb(), offset, is_mult, accum_rate, dist_type);
+        mut_handle.getNewType().insertClone(*new_node);
+        addCells(1);
+    }
+    else{
+        removeOneCell();
+        add_alterations();
+        HerPoissonClone *new_node = new HerPoissonClone(*cell_type, birth_rate, var, mut_prob, is_mult, accum_rate, dist_type);
         addCells(1);
         cell_type->insertClone(*new_node);
     }
@@ -802,6 +849,30 @@ bool HerResetExpClone::readLine(vector<string>& parsed_line){
     birth_rate = mean;
     add_alterations();
     return Clone::checkRep() && HerResetExpClone::checkRep();
+}
+
+bool HerPoissonClone::readLine(vector<string>& parsed_line){
+    //full line syntax: Clone HerPoissonClone [type_id] [num_cells] [mean] [var] [mut_rate] [accum_rate]
+    cell_count = 1;
+    try{
+        mean =stod(parsed_line[1]);
+        var =stod(parsed_line[2]);
+        mut_prob =stod(parsed_line[3]);
+        accum_rate =stod(parsed_line[4]);
+    }
+    catch (...){
+        return false;
+    }
+    if (parsed_line.size()>5){
+        dist_type = parsed_line[5];
+    }
+    if (parsed_line.size()>6){
+        double death = stod(parsed_line[6]);
+        cell_type->setDeathRate(death);
+    }
+    birth_rate = mean;
+    add_alterations();
+    return Clone::checkRep();
 }
 
 bool HerResetEmpiricClone::readLine(vector<string>& parsed_line){

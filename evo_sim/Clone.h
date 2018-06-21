@@ -158,6 +158,22 @@ public:
     bool readLine(vector<string>& parsed_line);
 };
 
+class HerPoissonClone: public HeritableClone{
+    // draws a poisson distributed number of alterations per generation
+protected:
+    double accum_rate;
+    double add_alteration();
+    
+    // adds a Poisson-distributed number of alterations
+    double add_alterations();
+public:
+    HerPoissonClone(CellType& type, double mu, double sig, double mut, double offset, bool mult, double accum, string dist);
+    HerPoissonClone(CellType& type, double mu, double sig, double mut, bool mult, double accum, string dist);
+    HerPoissonClone(CellType& type, bool mult);
+    void reproduce();
+    bool readLine(vector<string>& parsed_line);
+};
+
 class HerResetClone: public HeritableClone{
     // draws one new fitness alteration per generation, removes fitness alterations after exactly a given number of generations
 private:
@@ -178,7 +194,7 @@ public:
     bool readLine(vector<string>& parsed_line);
 };
 
-class HerResetExpClone: public HeritableClone{
+class HerResetExpClone: public HerPoissonClone{
     // draws one new fitness alteration per generation, removes fitness alterations after an exponentially-distributed number of generations
 private:
     vector<double> active_diff;
@@ -187,16 +203,12 @@ private:
     // The average lifetime is 1/time_constant.
     double time_constant;
     
-    double accum_rate;
-    
     // called in every reproduction to choose alteration to remove and remove alterations.
     // DOES NOT ADD ALTERATIONS! add_alteration() does this.
     void reset();
     
     double add_alteration();
-    
-    // adds a Poisson-distributed number of alterations
-    double add_alterations();
+
     bool checkRep(){
         return (accum_rate > 0 && time_constant > 0);
     };
