@@ -669,11 +669,8 @@ double HeritableClone::setNewBirth(double mean, double var){
         birth_rate = offset * mean;
     }
     else{
-        offset = drawFromDist(0, var);
-        if (birth_rate + offset < 0){
-            offset = -birth_rate;
-        }
-        birth_rate = offset + mean;
+        birth_rate = drawFromDist(mean, var);
+        offset = birth_rate - mean;
     }
     return offset;
 }
@@ -791,8 +788,11 @@ bool HeritableClone::readLine(vector<string>& parsed_line){
     if (parsed_line.size()>4){
         dist_type = parsed_line[4];
     }
-    if (parsed_line.size()>5){
-        double death = stod(parsed_line[5]);
+    if (parsed_line.size() > 5){
+        is_mult = bool(stoi(parsed_line[5]));
+    }
+    if (parsed_line.size()>6){
+        double death = stod(parsed_line[6]);
         cell_type->setDeathRate(death);
     }
     setNewBirth(mean, var);
@@ -814,13 +814,21 @@ bool HerResetClone::readLine(vector<string>& parsed_line){
     if (parsed_line.size()>5){
         dist_type = parsed_line[5];
     }
-    if (parsed_line.size()>6){
-        double death = stod(parsed_line[6]);
+    if (parsed_line.size() > 6){
+        is_mult = bool(stoi(parsed_line[6]));
+    }
+    if (parsed_line.size()>7){
+        double death = stod(parsed_line[7]);
         cell_type->setDeathRate(death);
     }
     double offset = setNewBirth(mean, var);
     for (int i=0; i<num_gen_persist-1; i++){
-        active_diff.push(1);
+        if (is_mult){
+            active_diff.push(1);
+        }
+        else{
+            active_diff.push(0);
+        }
     }
     active_diff.push(offset);
     return Clone::checkRep() && HerResetClone::checkRep();
