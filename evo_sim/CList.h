@@ -51,7 +51,7 @@ protected:
     Clone& chooseDeadVar(double total_death);
     void deleteList();
     void clearClones();
-    bool checkInit();
+    virtual bool checkInit();
     
     /* adds cells to population. should NOT be used when a new clone is added, only when cells are added to an existing clone.
      use insertNode if a new clone should be added.
@@ -71,6 +71,8 @@ protected:
         root = &new_root;
     }
     double getTotalDeath();
+    
+    void killCell(Clone& dead);
     
     
 public:
@@ -172,6 +174,17 @@ class MoranPop: public CList{
 public:
     MoranPop();
     virtual void advance();
+};
+
+class UpdateAllPop: public CList{
+private:
+    double timestep_length;
+protected:
+    bool checkInit();
+public:
+    UpdateAllPop();
+    void advance();
+    bool handle_line(vector<string>& parsed_line);
 };
 
 #endif /* clist_h */

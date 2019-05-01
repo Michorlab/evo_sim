@@ -47,6 +47,16 @@ public:
     
     virtual void reproduce() = 0;
     
+    virtual void update(double t){}
+    
+    virtual bool hasDied(){
+        return false;
+    }
+    
+    virtual bool hasReproduced(){
+        return false;
+    }
+    
     virtual bool readLine(vector<string>& parsed_line) = 0;
     
     void addCells(int num_cells);
@@ -108,6 +118,40 @@ public:
     virtual bool readLine(vector<string>& parsed_line) = 0;
     StochClone(CellType& type, bool mult);
     StochClone(CellType& type, double mut, bool mult);
+};
+
+class UpdateClone: public Clone{
+protected:
+    bool is_dead;
+    bool has_reproduced;
+public:
+    UpdateClone(CellType& type);
+    bool hasDied(){
+        return is_dead;
+    }
+    bool hasReproduced(){
+        return has_reproduced;
+    }
+    virtual void update(double t) = 0;
+    virtual void reproduce() = 0;
+    virtual bool readLine(vector<string>& parsed_line) = 0;
+};
+
+class Diffusion1DClone: public UpdateClone{
+private:
+    double threshold;
+    double curr_pos;
+    double diffusion;
+    double drift;
+    bool checkRep(){
+        return (diffusion >= 0 && drift >= 0 && curr_pos <= threshold && Clone::checkRep());
+    };
+public:
+    Diffusion1DClone(CellType& type);
+    Diffusion1DClone(CellType& type, double b, double mu, double dr, double diff, double thresh);
+    void reproduce();
+    void update(double t);
+    bool readLine(vector<string>& parsed_line);
 };
 
 class EmpiricalClone: public StochClone{

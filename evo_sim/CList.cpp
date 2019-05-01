@@ -124,6 +124,15 @@ double CList::getTotalBirth(){
     }
 }
 
+void CList::killCell(Clone& dead){
+    if (dead.isSingleCell()){
+        delete &dead;
+    }
+    else{
+        dead.removeOneCell();
+    }
+}
+
 void CList::advance()
 {
     uniform_real_distribution<double> runif;
@@ -138,21 +147,12 @@ void CList::advance()
     if (b_or_d < (total_death)){
         if (death_var){
             Clone& dead = chooseDeadVar(total_death);
-            if (dead.isSingleCell()){
-                delete &dead;
-            }
-            else{
-                dead.removeOneCell();
-            }
+            killCell(dead);
+
         }
         else{
             Clone& dead = chooseDead();
-            if (dead.isSingleCell()){
-                delete &dead;
-            }
-            else{
-                dead.removeOneCell();
-            }
+            killCell(dead);
         }
 
     }
@@ -315,6 +315,10 @@ bool CList::checkInit(){
     return (max_types && mut_model);
 }
 
+bool UpdateAllPop::checkInit(){
+    return (CList::checkInit() && timestep_length);
+}
+
 bool CList::isOneType(){
     return root->getNext();
 }
@@ -326,12 +330,7 @@ int CList::newestType(){
 void MoranPop::advance(){
     mut_model->reset();
     Clone& dead = chooseDead();
-    if (dead.isSingleCell()){
-        delete &dead;
-    }
-    else{
-        dead.removeOneCell();
-    }
+    killCell(dead);
     Clone& mother = chooseReproducer();
     prev_fit = mother.getBirthRate();
     mother.reproduce();
@@ -343,3 +342,52 @@ void MoranPop::advance(){
 }
 
 MoranPop::MoranPop() : CList(){}
+
+UpdateAllPop::UpdateAllPop() : CList(){
+    timestep_length = 0;
+}
+
+void UpdateAllPop::advance(){
+    mut_model->reset();
+    std::vector<Clone *> reproducers = std::vector<Clone *>();
+    std::vector<Clone *> dead = std::vector<Clone *>();
+    
+    CellType *curr_type = root;
+    while (curr_type->getNumCells() == 0){
+        curr_type = curr_type->getNext();
+    }
+    Clone *curr = curr_type->getRoot();
+    while (curr->getNextClone()){
+        curr->update(timestep_length);
+        if (curr->hasDied()){
+            dead.push_back(curr);
+        }
+        else if (curr->hasReproduced()){
+            reproducers.push_back(curr);
+        }
+        curr = curr->getNextClone();
+    }
+    
+    for (int i=0; i<reproducers.size(); i++){
+        reproducers.back()->reproduce();
+        reproducers.pop_back();
+    }
+    
+    for (int i=0; i<dead.size(); i++){
+        killCell(*dead.back());
+        dead.pop_back();
+    }
+    
+    time += timestep_length;
+}
+
+bool UpdateAllPop::handle_line(vector<string>& parsed_line){
+    if (parsed_line[0] == "timestep"){
+        timestep_length =stod(parsed_line[1]);
+    }
+    else{
+        return CList::handle_line(parsed_line);
+    }
+    
+    return true;
+}

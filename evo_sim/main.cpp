@@ -49,6 +49,9 @@ void *sim_thread(void *arg){
     else if (model_type == "branching"){
         clone_list = new CList();
     }
+    else if (model_type == "update"){
+        clone_list = new UpdateAllPop();
+    }
     else{
         cout << "bad simulation type" << endl;
         pthread_exit(NULL);
@@ -729,6 +732,25 @@ bool SimParams::make_clone(vector<string> &parsed_line){
             }
             else{
                 new_clone = new TypeSpecificClone(*new_type, false);
+            }
+            if (!new_clone->readLine(parsed_line)){
+                return false;
+            }
+            new_type->insertClone(*new_clone);
+        }
+    }
+    else if (type == "Diffusion1D"){
+        if (parsed_line.size() < 5){
+            err_type = "bad params for Diffusion1DClone";
+            return false;
+        }
+        Diffusion1DClone *new_clone;
+        for (int i=0; i<num_cells; i++){
+            if (*model_type == "update"){
+                new_clone = new Diffusion1DClone(*new_type);
+            }
+            else{
+                return false;
             }
             if (!new_clone->readLine(parsed_line)){
                 return false;

@@ -967,3 +967,72 @@ double EmpiricalClone::drawEmpirical(double mean, double var){
     int index = floor(runif(*eng) * cell_type->getDistSize());
     return (cell_type->getDistByIndex(index) * sqrt(var)) + mean;
 }
+
+UpdateClone::UpdateClone(CellType& type) : Clone(type){
+    is_dead = false;
+    has_reproduced = false;
+}
+
+Diffusion1DClone::Diffusion1DClone(CellType& type) : UpdateClone(type){
+    threshold = 0;
+    curr_pos = 0;
+    diffusion = 0;
+    drift = 0;
+}
+
+void Diffusion1DClone::update(double t){
+    uniform_real_distribution<double> runif;
+    normal_distribution<double> rnorm(drift, diffusion);
+    curr_pos += rnorm(*eng);
+    
+    if (curr_pos > threshold || runif(*eng) < (t * getDeathRate())){
+        is_dead = true;
+    }
+    else if (runif(*eng) < (t * birth_rate)){
+        has_reproduced = true;
+    }
+}
+
+bool Diffusion1DClone::readLine(vector<string>& parsed_line){
+    //full line syntax: Clone Diffusion1DClone [type_id] [num_cells] [birth_rate] [drift] [diffusion] [threshold] [mut_rate]
+    cell_count = 1;
+    try{
+        birth_rate =stod(parsed_line[1]);
+        drift =stod(parsed_line[2]);
+        diffusion = stod(parsed_line[3]);
+        threshold =stod(parsed_line[4]);
+        mut_prob =stod(parsed_line[5]);
+        
+    }
+    catch (...){
+        return false;
+    }
+    return Diffusion1DClone::checkRep();
+}
+
+void Diffusion1DClone::reproduce(){
+    uniform_real_distribution<double> runif;
+    if (runif(*eng) < mut_prob){
+        removeOneCell();
+        MutationHandler& mut_handle = cell_type->getMutHandler();
+        mut_handle.generateMutant(*cell_type, birth_rate, mut_prob);
+        Diffusion1DClone *new_node = new Diffusion1DClone(mut_handle.getNewType(), mut_handle.getNewBirthRate(), mut_handle.getNewMutProb(), drift, diffusion, threshold);
+        mut_handle.getNewType().insertClone(*new_node);
+        addCells(1);
+    }
+    else{
+        Diffusion1DClone *new_node = new Diffusion1DClone(*cell_type, birth_rate, mut_prob, drift, diffusion, threshold);
+        removeOneCell();
+        cell_type->insertClone(*new_node);
+        addCells(1);
+    }
+}
+
+Diffusion1DClone::Diffusion1DClone(CellType& type, double b, double mu, double dr, double diff, double thresh) : UpdateClone(type){
+    birth_rate = b;
+    threshold = thresh;
+    curr_pos = 0;
+    diffusion = diff;
+    drift = dr;
+    mut_prob = mu;
+}
