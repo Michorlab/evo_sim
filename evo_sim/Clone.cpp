@@ -50,7 +50,12 @@ Clone* Clone::getNextClone(){
             Clone* next_clone = next_type->getRoot();
             while (next_type && !next_clone){
                 next_type = next_type->getNext();
-                next_clone = next_type->getRoot();
+                if (next_type){
+                    next_clone = next_type->getRoot();
+                }
+                else{
+                    return NULL;
+                }
             }
             return next_clone;
         }
@@ -1007,8 +1012,8 @@ bool Diffusion1DClone::readLine(vector<string>& parsed_line){
         drift =stod(parsed_line[2]);
         diffusion = stod(parsed_line[3]);
         threshold =stod(parsed_line[4]);
-        mut_prob = stod(parsed_line[5]);
-        curr_pos = stod(parsed_line[6]);
+        mut_prob = stod(parsed_line[6]);
+        curr_pos = stod(parsed_line[5]);
         
     }
     catch (...){
