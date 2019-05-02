@@ -5,6 +5,8 @@ LFLAGS = -Wall $(DEBUG)
 BUILDDIR = build
 OBJS = $(BUILDDIR)/main.o $(BUILDDIR)/MutationHandler.o $(BUILDDIR)/CList.o $(BUILDDIR)/Clone.o $(BUILDDIR)/OutputWriter.o
 
+$(shell   mkdir -p $(BUILDDIR))
+
 $(BUILDDIR)/evo_sim : $(OBJS)
 	$(CC) $(LFLAGS) $(OBJS) -o $(BUILDDIR)/evo_sim
 
