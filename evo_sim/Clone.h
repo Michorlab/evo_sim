@@ -148,7 +148,7 @@ private:
     };
 public:
     Diffusion1DClone(CellType& type);
-    Diffusion1DClone(CellType& type, double b, double mu, double dr, double diff, double thresh);
+    Diffusion1DClone(CellType& type, double b, double mu, double dr, double diff, double thresh, double pos);
     void reproduce();
     void update(double t);
     bool readLine(vector<string>& parsed_line);

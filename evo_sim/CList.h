@@ -77,6 +77,7 @@ protected:
     
 public:
     CList();
+    virtual ~CList(){}
     CList(double death, MutationHandler& mut_handle, int max);
     
     /* adds a new type to the simulation. type must not already be present in the simulation.
@@ -157,7 +158,7 @@ public:
     
     void walkTypesAndWrite(ofstream& outfile, CellType& root);
     
-    bool handle_line(vector<string>& parsed_line);
+    virtual bool handle_line(vector<string>& parsed_line);
     
     bool read_clones(ifstream& infile);
     

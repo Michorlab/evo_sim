@@ -367,6 +367,13 @@ void UpdateAllPop::advance(){
         }
         curr = curr->getNextClone();
     }
+    curr->update(timestep_length);
+    if (curr->hasDied()){
+        dead.push_back(curr);
+    }
+    else if (curr->hasReproduced()){
+        reproducers.push_back(curr);
+    }
     
     for (int i=0; i<reproducers.size(); i++){
         reproducers.back()->reproduce();
