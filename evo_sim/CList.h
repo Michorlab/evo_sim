@@ -46,7 +46,7 @@ protected:
     long long tot_cell_count;
     MutationHandler *mut_model;
     
-    Clone& chooseReproducer();
+    virtual Clone& chooseReproducer();
     Clone& chooseDead();
     Clone& chooseDeadVar(double total_death);
     void deleteList();
@@ -146,7 +146,7 @@ public:
     }
     void refreshSim();
     
-    bool isExtinct(){
+    virtual bool isExtinct(){
         return tot_cell_count == 0;
     }
     
@@ -186,6 +186,22 @@ public:
     UpdateAllPop();
     void advance();
     bool handle_line(vector<string>& parsed_line);
+};
+
+class SexReprPop: public CList{
+private:
+    std::vector<CellType *> male_types;
+    std::vector<CellType *> female_types;
+    bool is_extinct;
+protected:
+    SexReprClone& chooseReproducerVector(vector<CellType *> possible_types);
+    SexReprClone& chooseMother();
+    SexReprClone& chooseFather();
+    bool checkInit();
+public:
+    SexReprPop();
+    void advance();
+    bool isExtinct(){return is_extinct;};
 };
 
 #endif /* clist_h */

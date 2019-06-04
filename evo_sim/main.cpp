@@ -52,6 +52,9 @@ void *sim_thread(void *arg){
     else if (model_type == "update"){
         clone_list = new UpdateAllPop();
     }
+    else if (model_type == "sexual"){
+        clone_list = new SexReprPop();
+    }
     else{
         cout << "bad simulation type" << endl;
         pthread_exit(NULL);

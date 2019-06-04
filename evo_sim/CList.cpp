@@ -398,3 +398,58 @@ bool UpdateAllPop::handle_line(vector<string>& parsed_line){
     
     return true;
 }
+
+void SexReprPop::advance(){
+    mut_model->reset();
+    std::vector<SexReprClone *> new_cells = std::vector<SexReprClone *>();
+    for (int i=0; i<tot_cell_count; i++){
+        SexReprClone& mother = chooseMother();
+        SexReprClone& father = chooseFather();
+        new_cells.push_back(&mother.reproduce(father));
+    }
+    clearClones();
+    for (vector<SexReprClone *>::iterator it = new_cells.begin(); it != new_cells.end(); ++it){
+        SexReprClone* new_cell = (*it);
+        new_cell->getType().insertClone(*new_cell);
+    }
+    bool males_extinct = false;
+    bool females_extinct = false;
+    for (vector<CellType *>::iterator it = male_types.begin(); it != male_types.end(); ++it){
+        males_extinct = males_extinct || (*it)->isExtinct();
+    }
+    for (vector<CellType *>::iterator it = female_types.begin(); it != female_types.end(); ++it){
+        females_extinct = females_extinct || (*it)->isExtinct();
+    }
+    is_extinct = males_extinct || females_extinct;
+}
+
+SexReprClone& SexReprPop::chooseReproducerVector(vector<CellType *> possible_types){
+    uniform_real_distribution<double> runif;
+    
+    double ran = runif(*eng) * getTotalBirth();
+    double curr_rate = 0;
+    SexReprClone *reproducer;
+    for (vector<CellType *>::iterator it = possible_types.begin(); it != possible_types.end(); ++it){
+        reproducer = (SexReprClone*)(*it)->getRoot();
+        curr_rate += reproducer->getTotalBirth();
+        while (curr_rate < ran && reproducer->getNextClone()){
+            if (reproducer->getNextClone()->getType().getIndex() != reproducer->getType().getIndex()){
+                break;
+            }
+            reproducer = (SexReprClone*)reproducer->getNextClone();
+            curr_rate += reproducer->getTotalBirth();
+        }
+        if (curr_rate > ran){
+            break;
+        }
+    }
+    return *reproducer;
+}
+
+SexReprClone& SexReprPop::chooseFather(){
+    return chooseReproducerVector(male_types);
+}
+
+SexReprClone& SexReprPop::chooseMother(){
+    return chooseReproducerVector(female_types);
+}

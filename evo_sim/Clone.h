@@ -308,4 +308,11 @@ public:
     bool readLine(vector<string>& parsed_line);
 };
 
+class SexReprClone: public Clone{
+public:
+    void reproduce(){};
+    virtual SexReprClone& reproduce(SexReprClone& male) = 0;
+    bool readLine(vector<string>& parsed_line) = 0;
+};
+
 #endif /* clone_h */
