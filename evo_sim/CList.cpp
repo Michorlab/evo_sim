@@ -343,6 +343,11 @@ void MoranPop::advance(){
 
 MoranPop::MoranPop() : CList(){}
 
+SexReprPop::SexReprPop() : CList(){
+    std::vector<int> male_types = std::vector<int>();
+    std::vector<int> female_types = std::vector<int>();
+}
+
 UpdateAllPop::UpdateAllPop() : CList(){
     timestep_length = 0;
 }
@@ -408,29 +413,44 @@ void SexReprPop::advance(){
         new_cells.push_back(&mother.reproduce(father));
     }
     clearClones();
+    for (vector<int>::iterator it = male_types.begin(); it != male_types.end(); ++it){
+        CellType *new_type = new CellType(*it, NULL);
+        insertCellType(*new_type);
+    }
+    for (vector<int>::iterator it = female_types.begin(); it != male_types.end(); ++it){
+        CellType *new_type = new CellType(*it, NULL);
+        insertCellType(*new_type);
+    }
     for (vector<SexReprClone *>::iterator it = new_cells.begin(); it != new_cells.end(); ++it){
         SexReprClone* new_cell = (*it);
         new_cell->getType().insertClone(*new_cell);
     }
     bool males_extinct = false;
     bool females_extinct = false;
-    for (vector<CellType *>::iterator it = male_types.begin(); it != male_types.end(); ++it){
-        males_extinct = males_extinct || (*it)->isExtinct();
+    for (vector<int>::iterator it = male_types.begin(); it != male_types.end(); ++it){
+        CellType* curr_type = getTypeByIndex(*it);
+        males_extinct = males_extinct || curr_type->isExtinct();
     }
-    for (vector<CellType *>::iterator it = female_types.begin(); it != female_types.end(); ++it){
-        females_extinct = females_extinct || (*it)->isExtinct();
+    for (vector<int>::iterator it = female_types.begin(); it != female_types.end(); ++it){
+        CellType* curr_type = getTypeByIndex(*it);
+        females_extinct = females_extinct || curr_type->isExtinct();
     }
     is_extinct = males_extinct || females_extinct;
+    time += 1;
 }
 
-SexReprClone& SexReprPop::chooseReproducerVector(vector<CellType *> possible_types){
+SexReprClone& SexReprPop::chooseReproducerVector(vector<int> possible_types){
     uniform_real_distribution<double> runif;
     
     double ran = runif(*eng) * getTotalBirth();
     double curr_rate = 0;
     SexReprClone *reproducer;
-    for (vector<CellType *>::iterator it = possible_types.begin(); it != possible_types.end(); ++it){
-        reproducer = (SexReprClone*)(*it)->getRoot();
+    for (vector<int>::iterator it = possible_types.begin(); it != possible_types.end(); ++it){
+        CellType* curr_type = getTypeByIndex(*it);
+        if (!curr_type){
+            continue;
+        }
+        reproducer = (SexReprClone*)curr_type->getRoot();
         curr_rate += reproducer->getTotalBirth();
         while (curr_rate < ran && reproducer->getNextClone()){
             if (reproducer->getNextClone()->getType().getIndex() != reproducer->getType().getIndex()){

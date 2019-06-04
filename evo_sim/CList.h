@@ -190,11 +190,11 @@ public:
 
 class SexReprPop: public CList{
 private:
-    std::vector<CellType *> male_types;
-    std::vector<CellType *> female_types;
+    std::vector<int> male_types;
+    std::vector<int> female_types;
     bool is_extinct;
 protected:
-    SexReprClone& chooseReproducerVector(vector<CellType *> possible_types);
+    SexReprClone& chooseReproducerVector(vector<int> possible_types);
     SexReprClone& chooseMother();
     SexReprClone& chooseFather();
     bool checkInit();
