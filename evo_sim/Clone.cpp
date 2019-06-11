@@ -1046,3 +1046,28 @@ Diffusion1DClone::Diffusion1DClone(CellType& type, double b, double mu, double d
     mut_prob = mu;
     cell_count = 1;
 }
+
+SexReprClone::SexReprClone(CellType& type) : Clone(type){}
+
+SexReprClone::SexReprClone(CellType& type, double b, double mu) : Clone(type, mu){
+    birth_rate = b;
+}
+
+SexReprClone& SexReprClone::reproduce(SexReprClone& male){
+    SexReprMutation* mut_handle = (SexReprMutation*)(&cell_type->getMutHandler());
+    mut_handle->generateMutant(getType(), male.getType(), birth_rate, mut_prob);
+    SexReprClone *new_clone = new SexReprClone(mut_handle->getNewType(), mut_handle->getNewBirthRate(), mut_handle->getNewMutProb());
+    return *new_clone;
+}
+
+bool SexReprClone::readLine(vector<string>& parsed_line){
+    //full line syntax: Clone SexReprClone [type_id] [num_cells] [birth_rate]
+    try{
+        birth_rate = stod(parsed_line[1]);
+    }
+    catch (...){
+        return false;
+    }
+    mut_prob = 1;
+    return Clone::checkRep();
+}

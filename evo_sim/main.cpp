@@ -761,6 +761,25 @@ bool SimParams::make_clone(vector<string> &parsed_line){
             new_type->insertClone(*new_clone);
         }
     }
+    else if (type == "SexReprClone"){
+        if (parsed_line.size() < 2){
+            err_type = "bad params for SexReprClone";
+            return false;
+        }
+        SexReprClone *new_clone;
+        for (int i=0; i<num_cells; i++){
+            if (*model_type == "sexual"){
+                new_clone = new SexReprClone(*new_type);
+            }
+            else{
+                return false;
+            }
+            if (!new_clone->readLine(parsed_line)){
+                return false;
+            }
+            new_type->insertClone(*new_clone);
+        }
+    }
     else if (type == "Heritable"){
         if (parsed_line.size() < 4){
             err_type = "bad params for HeritableClone";
@@ -947,6 +966,9 @@ bool SimParams::make_mut_handler(){
     }
     else if (mut_type == "FixedSites"){
         mut_handler = new FixedSitesMutation();
+    }
+    else if (mut_type == "FathersCurse"){
+        mut_handler = new FathersCurseMutation();
     }
     else if (mut_type == "Neutral"){
         mut_handler = new NeutralMutation();

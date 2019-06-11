@@ -402,3 +402,221 @@ void FixedSitesMutation::generateMutant(CellType &type, double b, double mut){
     }
     has_mutated = true;
 }
+
+SexReprMutation::SexReprMutation() : MutationHandler(){}
+
+FathersCurseMutation::FathersCurseMutation() : SexReprMutation(){
+    f_AA = -1;
+    f_Aa = -1;
+    f_aa = -1;
+    f_AA_y = -1;
+    f_Aa_y = -1;
+    f_aa_y = -1;
+    
+    autosome_mut = -1;
+    y_mut = -1;
+    
+    male_prob = 0.5;
+}
+
+void FathersCurseMutation::generateMutant(CellType& mother_type, CellType& father_type, double b, double mut){
+    uniform_real_distribution<double> runif;
+    
+    string autosome_genotype = "error";
+    if (mother_type.getIndex() == 0){
+        switch (father_type.getIndex()){
+            case 3: case 6:
+                autosome_genotype = "AA";
+                break;
+            case 4: case 7:
+                if (runif(*eng) < 0.5){
+                    autosome_genotype = "AA";
+                }
+                else{
+                    autosome_genotype = "Aa";
+                }
+                break;
+            case 5: case 8:
+                autosome_genotype = "Aa";
+                break;
+        }
+    }
+    else if (mother_type.getIndex() == 1){
+        double ran_num = runif(*eng);
+        switch (father_type.getIndex()){
+            case 3: case 6:
+                if (ran_num < 0.5){
+                    autosome_genotype = "AA";
+                }
+                else{
+                    autosome_genotype = "Aa";
+                }
+                break;
+            case 4: case 7:
+
+                if (ran_num < 0.25){
+                    autosome_genotype = "AA";
+                }
+                else if (ran_num < 0.5){
+                    autosome_genotype = "Aa";
+                }
+                else{
+                    autosome_genotype = "aa";
+                }
+                break;
+            case 5: case 8:
+                if (ran_num < 0.5){
+                    autosome_genotype = "aa";
+                }
+                else{
+                    autosome_genotype = "Aa";
+                }
+                break;
+        }
+    }
+    else if (mother_type.getIndex() == 2){
+        switch (father_type.getIndex()){
+            case 3: case 6:
+                autosome_genotype = "Aa";
+                break;
+            case 4: case 7:
+                if (runif(*eng) < 0.5){
+                    autosome_genotype = "aa";
+                }
+                else{
+                    autosome_genotype = "Aa";
+                }
+                break;
+            case 5: case 8:
+                autosome_genotype = "aa";
+                break;
+        }
+    }
+    else{
+        cout << "bad mother type";
+    }
+    
+    has_mutated = runif(*eng) < autosome_mut;
+    if (has_mutated){
+        if (autosome_genotype == "AA"){
+            autosome_genotype = "Aa";
+        }
+        else if (autosome_genotype == "Aa"){
+            if (runif(*eng) < 0.5){
+                autosome_genotype = "AA";
+            }
+            else{
+                autosome_genotype = "aa";
+            }
+        }
+        else if (autosome_genotype == "aa"){
+            autosome_genotype = "Aa";
+        }
+    }
+    
+    bool has_mutated_y = runif(*eng) < y_mut;
+    bool is_male = runif(*eng) < male_prob;
+    if (autosome_genotype == "AA"){
+        if (is_male){
+            if ((father_type.getIndex() <= 5 && !has_mutated_y) || (father_type.getIndex() > 5 && has_mutated_y)){
+                new_type = getNewTypeByIndex(3, mother_type);
+                birth_rate = f_AA;
+            }
+            else{
+                new_type = getNewTypeByIndex(6, mother_type);
+                birth_rate = f_AA_y;
+            }
+        }
+        else{
+            new_type = getNewTypeByIndex(0, mother_type);
+            birth_rate = f_AA;
+        }
+    }
+    else if (autosome_genotype == "Aa"){
+        if (is_male){
+            if ((father_type.getIndex() <= 5 && !has_mutated_y) || (father_type.getIndex() > 5 && has_mutated_y)){
+                new_type = getNewTypeByIndex(4, mother_type);
+                birth_rate = f_Aa;
+            }
+            else{
+                new_type = getNewTypeByIndex(7, mother_type);
+                birth_rate = f_Aa_y;
+            }
+        }
+        else{
+            new_type = getNewTypeByIndex(1, mother_type);
+            birth_rate = f_Aa;
+        }
+    }
+    else if (autosome_genotype == "aa"){
+        if (is_male){
+            if ((father_type.getIndex() <= 5 && !has_mutated_y) || (father_type.getIndex() > 5 && has_mutated_y)){
+                new_type = getNewTypeByIndex(5, mother_type);
+                birth_rate = f_aa;
+            }
+            else{
+                new_type = getNewTypeByIndex(8, mother_type);
+                birth_rate = f_aa_y;
+            }
+        }
+        else{
+            new_type = getNewTypeByIndex(2, mother_type);
+            birth_rate = f_aa;
+        }
+    }
+    else{
+        cout << "bad father type";
+    }
+    mut_prob = mut;
+}
+
+bool FathersCurseMutation::read(std::vector<string>& params){
+    
+    string pre;
+    string post;
+    for (int i=0; i<int(params.size()); i++){
+        string tok = params[i];
+        stringstream ss;
+        ss.str(tok);
+        getline(ss, pre, ',');
+        if (!getline(ss, post)){
+            return false;
+        }
+        if (pre=="f_AA"){
+            f_AA = stod(post);
+        }
+        else if (pre=="f_Aa"){
+            f_Aa = stod(post);
+        }
+        else if (pre=="f_aa"){
+            f_aa = stod(post);
+        }
+        else if (pre=="f_AA_y"){
+            f_AA_y = stod(post);
+        }
+        else if (pre=="f_aa_y"){
+            f_aa_y = stod(post);
+        }
+        else if (pre=="f_Aa_y"){
+            f_Aa_y = stod(post);
+        }
+        else if (pre=="autosome_mut"){
+            autosome_mut = stod(post);
+        }
+        else if (pre=="y_mut"){
+            y_mut = stod(post);
+        }
+        else if (pre=="male_prob"){
+            male_prob = stod(post);
+        }
+        else{
+            return false;
+        }
+    }
+    
+    if (f_AA < 0 || f_aa < 0 || f_Aa < 0 || f_aa_y < 0 || f_Aa_y < 0 || f_AA_y < 0 || autosome_mut < 0 || y_mut < 0 || male_prob < 0){
+        return false;
+    }
+    
+    return true;
+}

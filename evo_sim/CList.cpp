@@ -439,6 +439,21 @@ void SexReprPop::advance(){
     time += 1;
 }
 
+bool SexReprPop::checkInit(){
+    bool males_extinct = false;
+    bool females_extinct = false;
+    for (vector<int>::iterator it = male_types.begin(); it != male_types.end(); ++it){
+        CellType* curr_type = getTypeByIndex(*it);
+        males_extinct = males_extinct || curr_type->isExtinct();
+    }
+    for (vector<int>::iterator it = female_types.begin(); it != female_types.end(); ++it){
+        CellType* curr_type = getTypeByIndex(*it);
+        females_extinct = females_extinct || curr_type->isExtinct();
+    }
+    is_extinct = males_extinct || females_extinct;
+    return !is_extinct && CList::checkInit();
+}
+
 SexReprClone& SexReprPop::chooseReproducerVector(vector<int> possible_types){
     uniform_real_distribution<double> runif;
     

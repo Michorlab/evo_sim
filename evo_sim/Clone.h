@@ -310,9 +310,11 @@ public:
 
 class SexReprClone: public Clone{
 public:
+    SexReprClone(CellType& type);
+    SexReprClone(CellType& type, double b, double mu);
     void reproduce(){};
-    virtual SexReprClone& reproduce(SexReprClone& male) = 0;
-    bool readLine(vector<string>& parsed_line) = 0;
+    SexReprClone& reproduce(SexReprClone& male);
+    bool readLine(vector<string>& parsed_line);
 };
 
 #endif /* clone_h */

@@ -62,6 +62,32 @@ public:
     virtual bool read(std::vector<string>& params) = 0;
 };
 
+class SexReprMutation: public MutationHandler{
+public:
+    SexReprMutation();
+    void generateMutant(CellType& type, double b, double mut){};
+    virtual void generateMutant(CellType& mother_type, CellType& father_type, double b, double mut)=0;
+    virtual bool read(std::vector<string>& params) = 0;
+};
+
+class FathersCurseMutation: public SexReprMutation{
+private:
+    double f_AA;
+    double f_Aa;
+    double f_aa;
+    double f_AA_y;
+    double f_Aa_y;
+    double f_aa_y;
+    
+    double autosome_mut;
+    double y_mut;
+    double male_prob;
+public:
+    FathersCurseMutation();
+    void generateMutant(CellType& mother_type, CellType& father_type, double b, double mut);
+    bool read(std::vector<string>& params);
+};
+
 class ThreeTypesMutation: public MutationHandler {
     /* only forward mutation, three types {0,1,2} in typespace, constant mutation rates between types
      additive fitness changes between types
