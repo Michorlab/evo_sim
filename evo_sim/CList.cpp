@@ -75,6 +75,11 @@ void CList::refreshSim(){
     new_type = 0;
 }
 
+void SexReprPop::refreshSim(){
+    CList::refreshSim();
+    is_extinct = false;
+}
+
 void CList::insertCellType(CellType& new_type) {
     if (curr_types[new_type.getIndex()]){
         throw "type space conflict";
@@ -346,6 +351,7 @@ MoranPop::MoranPop() : CList(){}
 SexReprPop::SexReprPop() : CList(){
     std::vector<int> male_types = std::vector<int>();
     std::vector<int> female_types = std::vector<int>();
+    is_extinct = false;
 }
 
 UpdateAllPop::UpdateAllPop() : CList(){
@@ -404,39 +410,65 @@ bool UpdateAllPop::handle_line(vector<string>& parsed_line){
     return true;
 }
 
+bool SexReprPop::handle_line(vector<string>& parsed_line){
+    if (parsed_line[0] == "male_types"){
+        for (int i=1; i<parsed_line.size(); i++){
+            male_types.push_back(stoi(parsed_line[i]));
+        }
+    }
+    else if (parsed_line[0] == "female_types"){
+        for (int i=1; i<parsed_line.size(); i++){
+            female_types.push_back(stoi(parsed_line[i]));
+        }
+    }
+    else{
+        return CList::handle_line(parsed_line);
+    }
+    
+    return true;
+}
+
 void SexReprPop::advance(){
     mut_model->reset();
     std::vector<SexReprClone *> new_cells = std::vector<SexReprClone *>();
+    std::vector<int> type_indices = std::vector<int>();
     for (int i=0; i<tot_cell_count; i++){
-        SexReprClone& mother = chooseMother();
-        SexReprClone& father = chooseFather();
-        new_cells.push_back(&mother.reproduce(father));
+        SexReprClone* mother = &chooseMother();
+        SexReprClone* father = &chooseFather();
+        SexReprClone& new_cell = mother->reproduce(*father);
+        new_cells.push_back(&new_cell);
+        type_indices.push_back(new_cell.getType().getIndex());
     }
-    clearClones();
+    double prev_time = time;
+    refreshSim();
     for (vector<int>::iterator it = male_types.begin(); it != male_types.end(); ++it){
         CellType *new_type = new CellType(*it, NULL);
         insertCellType(*new_type);
     }
-    for (vector<int>::iterator it = female_types.begin(); it != male_types.end(); ++it){
+    for (vector<int>::iterator it = female_types.begin(); it != female_types.end(); ++it){
         CellType *new_type = new CellType(*it, NULL);
         insertCellType(*new_type);
     }
-    for (vector<SexReprClone *>::iterator it = new_cells.begin(); it != new_cells.end(); ++it){
-        SexReprClone* new_cell = (*it);
+    for (int i=0; i<new_cells.size(); i++){
+        SexReprClone* new_cell = new_cells[i];
+        int index = type_indices[i];
+        CellType *new_type = getTypeByIndex(index);
+        new_cell->setType(*new_type);
         new_cell->getType().insertClone(*new_cell);
     }
-    bool males_extinct = false;
-    bool females_extinct = false;
+    bool males_extinct = true;
+    bool females_extinct = true;
     for (vector<int>::iterator it = male_types.begin(); it != male_types.end(); ++it){
         CellType* curr_type = getTypeByIndex(*it);
-        males_extinct = males_extinct || curr_type->isExtinct();
+        males_extinct = males_extinct && curr_type->isExtinct();
     }
     for (vector<int>::iterator it = female_types.begin(); it != female_types.end(); ++it){
         CellType* curr_type = getTypeByIndex(*it);
-        females_extinct = females_extinct || curr_type->isExtinct();
+        females_extinct = females_extinct && curr_type->isExtinct();
     }
-    is_extinct = males_extinct || females_extinct;
-    time += 1;
+    is_extinct = males_extinct && females_extinct;
+    time = prev_time + 1;
+    recalc_birth = true;
 }
 
 bool SexReprPop::checkInit(){
@@ -456,13 +488,20 @@ bool SexReprPop::checkInit(){
 
 SexReprClone& SexReprPop::chooseReproducerVector(vector<int> possible_types){
     uniform_real_distribution<double> runif;
-    
-    double ran = runif(*eng) * getTotalBirth();
+    double total_birth_vect = 0;
+    for (vector<int>::iterator it = possible_types.begin(); it != possible_types.end(); ++it){
+        CellType* curr_type = getTypeByIndex(*it);
+        if (!curr_type || curr_type->isExtinct()){
+            continue;
+        }
+        total_birth_vect += curr_type->getBirthRate();
+    }
+    double ran = runif(*eng) * total_birth_vect;
     double curr_rate = 0;
     SexReprClone *reproducer;
     for (vector<int>::iterator it = possible_types.begin(); it != possible_types.end(); ++it){
         CellType* curr_type = getTypeByIndex(*it);
-        if (!curr_type){
+        if (!curr_type || curr_type->isExtinct()){
             continue;
         }
         reproducer = (SexReprClone*)curr_type->getRoot();
@@ -487,4 +526,18 @@ SexReprClone& SexReprPop::chooseFather(){
 
 SexReprClone& SexReprPop::chooseMother(){
     return chooseReproducerVector(female_types);
+}
+
+void SexReprPop::addMaleType(int type_index){
+    if(male_types.size() == 0 || std::find(male_types.begin(), male_types.end(), type_index) == male_types.end()) {
+        male_types.push_back(type_index);
+    }
+    return;
+}
+
+void SexReprPop::addFemaleType(int type_index){
+    if(female_types.size() == 0 || std::find(female_types.begin(), female_types.end(), type_index) == female_types.end()) {
+        female_types.push_back(type_index);
+    }
+    return;
 }

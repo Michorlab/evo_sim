@@ -761,7 +761,7 @@ bool SimParams::make_clone(vector<string> &parsed_line){
             new_type->insertClone(*new_clone);
         }
     }
-    else if (type == "SexReprClone"){
+    else if (type == "SexRepr"){
         if (parsed_line.size() < 2){
             err_type = "bad params for SexReprClone";
             return false;

@@ -296,14 +296,29 @@ void AllTypesWriter::beginAction(CList& clone_list){
 }
 
 void AllTypesWriter::duringSimAction(CList& clone_list){
-    int new_index = clone_list.newestType();
-    bool made_new_type = true;
     for (vector<CellCountWriter *>::iterator it = writers.begin(); it != writers.end(); ++it){
         (*it)->duringSimAction(clone_list);
-        made_new_type = made_new_type && !(new_index == (*it)->getTypeIndex());
     }
-    if (made_new_type){
-        CellCountWriter *new_writer = new CellCountWriter(ofile_loc, writing_period, new_index, sim_number);
+    
+    if (writers.size() == (clone_list.getMaxTypes() - 1)){
+        return;
+    }
+    
+    vector<int> new_types = vector<int>();
+    for (int i=0; i<clone_list.getMaxTypes(); i++){
+        if (!clone_list.getTypeByIndex(i)){
+            continue;
+        }
+        bool found = false;
+        for (vector<CellCountWriter *>::iterator it = writers.begin(); it != writers.end(); ++it){
+            found = found || ((*it)->getTypeIndex() == i);
+        }
+        if (!found){
+            new_types.push_back(i);
+        }
+    }
+    for (vector<int>::iterator it = new_types.begin(); it != new_types.end(); ++it){
+        CellCountWriter *new_writer = new CellCountWriter(ofile_loc, writing_period, (*it), sim_number);
         writers.push_back(new_writer);
         new_writer->beginAction(clone_list);
     }

@@ -419,6 +419,23 @@ FathersCurseMutation::FathersCurseMutation() : SexReprMutation(){
     male_prob = 0.5;
 }
 
+/*
+ === THIS METHOD SPECIFIES MENDELIAN INHERITANCE IN THE FATHER'S CURSE MODEL===
+ It is called for every reproduction event in these simulations. Additional mutations are also handled with this method.
+ Genotype to cell type code:
+ Females-
+ 0: AA XX
+ 1: Aa XX
+ 2: aa XX
+ Males-
+ 3: AA XY
+ 4: Aa XY
+ 5: aa XY
+ 6: AA Xy
+ 7: Aa Xy
+ 8: aa Xy
+ */
+
 void FathersCurseMutation::generateMutant(CellType& mother_type, CellType& father_type, double b, double mut){
     uniform_real_distribution<double> runif;
     
@@ -457,7 +474,7 @@ void FathersCurseMutation::generateMutant(CellType& mother_type, CellType& fathe
                 if (ran_num < 0.25){
                     autosome_genotype = "AA";
                 }
-                else if (ran_num < 0.5){
+                else if (ran_num < 0.75){
                     autosome_genotype = "Aa";
                 }
                 else{
@@ -571,7 +588,11 @@ void FathersCurseMutation::generateMutant(CellType& mother_type, CellType& fathe
 }
 
 bool FathersCurseMutation::read(std::vector<string>& params){
-    
+    /*
+     Format for FathersCurse params line:
+     sim_params mut_handler_params f_AA,## f_Aa,## f_aa,## f_AA_y,## f_Aa_y,## f_aa_y,## autosome_mut,## y_mut,## male_prob,##
+     where each ## should be replaced by the numeric value of that parameter. All parameters must be present to create a functional FathersCurseMutationHandler.
+     */
     string pre;
     string post;
     for (int i=0; i<int(params.size()); i++){

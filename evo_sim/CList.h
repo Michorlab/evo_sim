@@ -144,7 +144,7 @@ public:
     std::vector<CellType *>& getRootTypes(){
         return root_types;
     }
-    void refreshSim();
+    virtual void refreshSim();
     
     virtual bool isExtinct(){
         return tot_cell_count == 0;
@@ -169,6 +169,9 @@ public:
     int getMaxTypes(){
         return max_types - 1;
     }
+    
+    virtual void addMaleType(int type_index){};
+    virtual void addFemaleType(int type_index){};
 };
 
 class MoranPop: public CList{
@@ -202,6 +205,10 @@ public:
     SexReprPop();
     void advance();
     bool isExtinct(){return is_extinct;};
+    void addMaleType(int type_index);
+    void addFemaleType(int type_index);
+    void refreshSim();
+    bool handle_line(vector<string>& parsed_line);
 };
 
 #endif /* clist_h */

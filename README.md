@@ -8,7 +8,7 @@ Run make from the command line in the evo_sim directory. A build directory conta
 ## Command-line interface and file types
 The command line call format is: evo_sim -i [input file path] -o [output file folder path] -m [simulation type] -n [number of threads]
 
-All of the above command line inputs are required. The simulation type is currently either "branching" or "moran". If there is an error in the command line inputs, the program will print to the console and exit. If there is an error with the input file format, a message detailing the error will print to a file in the output directory with extension ".eevo".
+All of the above command line inputs are required. The simulation type is currently either "branching", "moran", or "sexual". If there is an error in the command line inputs, the program will print to the console and exit. If there is an error with the input file format, a message detailing the error will print to a file in the output directory with extension ".eevo".
 
 Input text files have a format detailed below and are of file extension ".ievo". Output text files have formats that depend on what data they are recording, and have file extension ".oevo".
 
@@ -23,4 +23,7 @@ There are currently 5 general types of valid commands in an input file. These ar
 4. listener commands. These are optional and determine what stopping conditions each simulation trial will have. Simulation trials will always stop when there are no cells left in the population.
 5. clone and multiclone commands. These determine what clones are present initially. At least one clone or multiclone command is required. multiclone lines are used to create many clone types with the same initial properties (fitness distributions, initial numbers, and inheritance models).
 
-readme updated 7/11/2017 by dve
+## Sexual reproduction models
+Simulations of sexually-reproducing populations is currently supported, but has not been tested as extensively as the original asexual models. To run these simulations, you must set the model type to "sexual" in the command-line arguments and use a SexReprClone or a derivative. Each individual's sex is determined by their CellType; each CellType is either male or female, so offspring can only be created from parents of two different CellTypes, and will often have a different CellType than those of the parents. Therefore, you must also create or select an appropriate MutationHandler that determines how traits are inherited. An example of such a MutationHandler is the FathersCurseMutation class. Note that currently the mutation probability for these models must be specified in the MutationHandler rather than the Clone.
+
+readme updated 7/17/2019 by dve

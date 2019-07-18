@@ -1047,10 +1047,13 @@ Diffusion1DClone::Diffusion1DClone(CellType& type, double b, double mu, double d
     cell_count = 1;
 }
 
-SexReprClone::SexReprClone(CellType& type) : Clone(type){}
+SexReprClone::SexReprClone(CellType& type) : Clone(type){
+    cell_count = 1;
+}
 
 SexReprClone::SexReprClone(CellType& type, double b, double mu) : Clone(type, mu){
     birth_rate = b;
+    cell_count = 1;
 }
 
 SexReprClone& SexReprClone::reproduce(SexReprClone& male){
@@ -1061,7 +1064,7 @@ SexReprClone& SexReprClone::reproduce(SexReprClone& male){
 }
 
 bool SexReprClone::readLine(vector<string>& parsed_line){
-    //full line syntax: Clone SexReprClone [type_id] [num_cells] [birth_rate]
+    //full line syntax: Clone SexReprClone [type_id] [num_cells] [birth_rate] [sex]
     try{
         birth_rate = stod(parsed_line[1]);
     }
@@ -1069,5 +1072,6 @@ bool SexReprClone::readLine(vector<string>& parsed_line){
         return false;
     }
     mut_prob = 1;
+    cell_count = 1;
     return Clone::checkRep();
 }

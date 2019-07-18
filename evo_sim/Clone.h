@@ -94,6 +94,11 @@ public:
         return *cell_type;
     }
     
+    // only call if previous type is going away
+    void setType(CellType& type){
+        cell_type = &type;
+    }
+    
     Clone* getNextClone();
     
     /* removes one cell from this clone's population
